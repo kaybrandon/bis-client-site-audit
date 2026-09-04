@@ -11,18 +11,24 @@ obj/
 *.db-shm
 *.db-wal
 
+## Node
+node_modules/
+client/dist/
+*.log
+
 ## Uploads (keep folder, ignore content)
-src/BisAudit.Web/wwwroot/uploads/**
-!src/BisAudit.Web/wwwroot/uploads/.gitkeep
+src/BisAudit.Api/wwwroot/uploads/**
+!src/BisAudit.Api/wwwroot/uploads/.gitkeep
 
 ## Secrets / local
 appsettings.Local.json
 *.pfx
+client/.env
+client/.env.local
 
 ## OS
 .DS_Store
 Thumbs.db
 
 ## Logs
-*.log
 logs/

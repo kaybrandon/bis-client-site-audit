@@ -14,12 +14,12 @@ services:
       timeout: 5s
       retries: 15
 
-  web:
+  api:
     build:
       context: .
-      dockerfile: src/BisAudit.Web/Dockerfile
+      dockerfile: src/BisAudit.Api/Dockerfile
     ports:
-      - "8080:8080"
+      - "5088:8080"
     environment:
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: Server=sqlserver;Database=BisAudit;User Id=sa;Password=Your_password123;TrustServerCertificate=True;MultipleActiveResultSets=true

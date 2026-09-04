@@ -2,6 +2,7 @@
 **/obj
 **/.vs
 **/.git
+**/node_modules
 **/wwwroot/uploads/**
 !**/.gitkeep
-README.md
+client/dist
