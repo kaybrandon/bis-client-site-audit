@@ -71,9 +71,9 @@ h1, h2, h3 { letter-spacing: -0.02em; }
 .section-head h2 { margin: 0; font-size: 1.35rem; }
 .muted { color: var(--muted); margin: 4px 0 0; }
 
-.audit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
-.audit-card { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
-.audit-card-top { display: flex; justify-content: space-between; gap: 12px; }
+.audit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 18px; }
+.audit-card { padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.audit-card-top { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
 .client-thumb {
     width: 48px; height: 48px; border-radius: 10px; background: #e8eef6;
     display: grid; place-items: center; overflow: hidden; flex-shrink: 0;
@@ -233,8 +233,9 @@ table.data th { color: var(--muted); font-weight: 650; }
     }
     .modal-card .body { flex: 1; overflow: auto; }
     .modal-card footer { position: sticky; bottom: 0; background: #fff; }
+    .card-foot { flex-direction: column; align-items: stretch; }
     .card-actions { width: 100%; }
-    .card-actions .btn { flex: 1 1 auto; }
+    .card-actions .btn { flex: 1 1 calc(33.33% - 8px); min-width: 96px; }
 }
 
 @media print {
