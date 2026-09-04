@@ -1,0 +1,90 @@
+@page "/audits/{Id:guid}/photos"
+@layout AuditLayout
+@attribute [Authorize]
+@rendermode InteractiveServer
+@inject AuditService Audits
+@inject PhotoService PhotoStore
+@inject DropdownService Dropdowns
+@inject IJSRuntime Js
+
+<PageTitle>Site Photos</PageTitle>
+
+<div class="toolbar">
+    <div>
+        <h2>Site Photos</h2>
+        <p class="count">@Items.Count photos in the global library (including item attachments)</p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <select class="form-select" style="width:auto" @bind="CategoryFilter">
+            <option value="">All categories</option>
+            @foreach (var c in Categories) { <option value="@c">@c</option> }
+        </select>
+        <label class="btn btn-primary">
+            + Add photo
+            <InputFile OnChange="Upload" accept="image/*" style="display:none" />
+        </label>
+    </div>
+</div>
+
+<p class="muted">Upload site-level photos here. Item cards across the audit also attach photos; they appear in this library.</p>
+
+@if (Filtered.Count == 0)
+{
+    <div class="empty">No photos yet.</div>
+}
+else
+{
+    <div class="photo-grid">
+        @foreach (var photo in Filtered)
+        {
+            <figure class="photo-tile">
+                <img src="@photo.PublicUrl" alt="@photo.Caption" />
+                <figcaption>
+                    <strong>@photo.Category</strong><br />
+                    @photo.OwnerType@(photo.OwnerId is null ? "" : " attachment")<br />
+                    @photo.FileName
+                    <div style="margin-top:6px">
+                        <button type="button" class="btn btn-danger btn-sm" @onclick="() => Delete(photo.Id)">Delete</button>
+                    </div>
+                </figcaption>
+            </figure>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    private List<SitePhoto> Items { get; set; } = [];
+    private List<string> Categories { get; set; } = [];
+    private string CategoryFilter { get; set; } = "";
+    private string UploadCategory { get; set; } = "Site Photo";
+
+    private List<SitePhoto> Filtered => Items
+        .Where(p => string.IsNullOrEmpty(CategoryFilter) || p.Category == CategoryFilter)
+        .ToList();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        Categories = await Dropdowns.OptionsAsync(DropdownKeys.PhotoCategory);
+        if (Categories.Contains("Site Photo")) UploadCategory = "Site Photo";
+        await Reload();
+    }
+
+    private async Task Reload() => Items = await PhotoStore.ForAuditAsync(Id);
+
+    private async Task Upload(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        await using var stream = file.OpenReadStream(8_000_000);
+        await PhotoStore.SaveAsync(Id, stream, file.Name, file.ContentType, UploadCategory, PhotoOwnerTypes.Audit, null);
+        await Audits.TouchAsync(Id);
+        await Reload();
+    }
+
+    private async Task Delete(Guid photoId)
+    {
+        if (!await Js.InvokeAsync<bool>("confirm", "Delete this photo?")) return;
+        await PhotoStore.DeleteAsync(photoId);
+        await Reload();
+    }
+}

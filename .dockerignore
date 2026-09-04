@@ -1,0 +1,7 @@
+**/bin
+**/obj
+**/.vs
+**/.git
+**/wwwroot/uploads/**
+!**/.gitkeep
+README.md

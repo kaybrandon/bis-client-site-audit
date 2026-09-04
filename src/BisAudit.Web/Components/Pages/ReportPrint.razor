@@ -1,0 +1,155 @@
+@page "/reports/{Id:guid}"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@inject AuditService Audits
+@inject IJSRuntime Js
+
+<PageTitle>@(Audit?.CompanyName) · Client Report</PageTitle>
+
+<header class="app-header no-print">
+    <div class="app-brand">
+        <a class="btn btn-ghost btn-icon" href="/reports">←</a>
+        <div>
+            <h1>Client Report</h1>
+            <p>@(Audit?.CompanyName)</p>
+        </div>
+    </div>
+    <div class="header-actions">
+        <button type="button" class="btn btn-light" @onclick="Print">Print / PDF</button>
+    </div>
+</header>
+
+@if (Audit is null)
+{
+    <div class="content"><p>Audit not found.</p></div>
+}
+else
+{
+    var progress = ProgressCalculator.Calculate(Audit);
+    var metrics = ReportMetrics.From(Audit);
+    <div class="content">
+        <article class="report">
+            <p class="muted">BIS Client IT Audit · Infrastructure assurance workspace</p>
+            <h1>@Audit.CompanyName</h1>
+            <p>@Audit.Industry · @(Audit.EmployeeCount ?? 0) employees · @Audit.Status · Audit date @Audit.AuditDate.ToString("MMMM d, yyyy")</p>
+            @if (!string.IsNullOrWhiteSpace(Audit.Address))
+            {
+                <p>@Audit.Address</p>
+            }
+            <p><strong>Prepared by:</strong> @(Audit.PreparedBy ?? "—") &nbsp; <strong>Progress:</strong> @progress.Percent%</p>
+
+            <div class="kpi-row">
+                <div class="kpi"><span>Open critical / high</span><strong>@metrics.CriticalHighCount</strong></div>
+                <div class="kpi"><span>Open issues</span><strong>@metrics.OpenIssueCount</strong></div>
+                <div class="kpi"><span>Annual cost of inaction</span><strong>@metrics.AnnualCostOfInaction.ToString("C0")</strong></div>
+                <div class="kpi"><span>Recommended investment</span><strong>@metrics.Investment.ToString("C0")</strong></div>
+                <div class="kpi"><span>Annual savings</span><strong>@metrics.AnnualSavings.ToString("C0")</strong></div>
+                <div class="kpi"><span>Payback</span><strong>@(metrics.Investment > 0 ? (metrics.PaybackMonths is null ? "n/a" : $"{metrics.PaybackMonths} months") : "—")</strong></div>
+            </div>
+
+            <h2>Executive summary</h2>
+            <p>@(string.IsNullOrWhiteSpace(Audit.ExecutiveSummary) ? "No executive summary recorded." : Audit.ExecutiveSummary)</p>
+            <p><strong>Scope:</strong> @(Audit.AuditScope ?? "—")</p>
+            <p><strong>Previous IT support:</strong> @(Audit.PreviousItSupport ?? "—")</p>
+
+            <h2>Contacts</h2>
+            <table class="data">
+                <thead><tr><th>Role</th><th>Name</th><th>Title</th><th>Email</th><th>Phone</th></tr></thead>
+                <tbody>
+                @foreach (var c in Audit.Contacts.OrderBy(c => c.Role))
+                {
+                    <tr><td>@c.Role</td><td>@c.Name</td><td>@c.Title</td><td>@c.Email</td><td>@c.Phone</td></tr>
+                }
+                </tbody>
+            </table>
+
+            <h2>Open issues</h2>
+            <table class="data">
+                <thead><tr><th>Issue / Recommendation</th><th>Severity</th><th>Status</th><th>Monthly impact</th><th>Notes</th></tr></thead>
+                <tbody>
+                @foreach (var issue in Audit.Issues.Where(i => !ProgressCalculator.ClosedIssueStatuses.Contains(i.Status)).OrderBy(i => i.PriorityRank))
+                {
+                    <tr>
+                        <td>@issue.IssueRecommendation</td>
+                        <td>@issue.Severity</td>
+                        <td>@issue.Status</td>
+                        <td>@((issue.MonthlyCostImpact ?? 0).ToString("C0"))</td>
+                        <td>@issue.Notes</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+
+            <h2>Purchase tracker</h2>
+            <table class="data">
+                <thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th>Line</th><th>Monthly savings</th><th>Status</th></tr></thead>
+                <tbody>
+                @foreach (var p in Audit.Purchases)
+                {
+                    <tr>
+                        <td>@p.Item</td>
+                        <td>@p.Quantity</td>
+                        <td>@((p.EstimatedUnitCost ?? 0).ToString("C0"))</td>
+                        <td>@p.LineInvestment.ToString("C0")</td>
+                        <td>@((p.MonthlySavings ?? 0).ToString("C0"))</td>
+                        <td>@p.Status</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+
+            <h2>Team & workstations</h2>
+            @SectionTable(Audit.Workstations.Select(w => (w.DisplayTitle, w.Status, w.DisplayDetail)))
+
+            <h2>Network & infrastructure</h2>
+            @SectionTable(Audit.NetworkItems.Select(w => (w.DisplayTitle, w.Status, w.DisplayDetail)))
+
+            <h2>Servers, storage & cloud</h2>
+            @SectionTable(Audit.ServerStorageItems.Select(w => (w.DisplayTitle, w.Status, w.DisplayDetail)))
+
+            <h2>Security, cameras & AV</h2>
+            @SectionTable(Audit.SecurityAvItems.Select(w => (w.DisplayTitle, w.Status, w.DisplayDetail)))
+
+            <h2>Software & licensing</h2>
+            @SectionTable(Audit.SoftwareItems.Select(w => (w.DisplayTitle, w.Status, w.DisplayDetail)))
+
+            @if (Audit.Photos.Count > 0)
+            {
+                <h2>Site photos</h2>
+                <div class="photo-grid">
+                    @foreach (var photo in Audit.Photos)
+                    {
+                        <figure class="photo-tile">
+                            <img src="@photo.PublicUrl" alt="@photo.Caption" />
+                            <figcaption>@photo.Category · @photo.FileName</figcaption>
+                        </figure>
+                    }
+                </div>
+            }
+
+            <p class="muted">Annual cost of inaction = Σ monthly cost impact × 12. Investment = Σ (qty × unit cost) excluding cancelled. Annual savings = Σ monthly savings × 12. Payback months = investment ÷ (annual savings / 12) when investment &gt; 0.</p>
+        </article>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    private ClientAudit? Audit { get; set; }
+
+    protected override async Task OnParametersSetAsync() => Audit = await Audits.GetAsync(Id);
+
+    private Task Print() => Js.InvokeVoidAsync("bisPrint").AsTask();
+
+    private static RenderFragment SectionTable(IEnumerable<(string Title, string Status, string? Detail)> rows) => __builder =>
+    {
+        <table class="data">
+            <thead><tr><th>Item</th><th>Status</th><th>Notes</th></tr></thead>
+            <tbody>
+            @foreach (var row in rows)
+            {
+                <tr><td>@row.Title</td><td>@row.Status</td><td>@row.Detail</td></tr>
+            }
+            </tbody>
+        </table>
+    };
+}

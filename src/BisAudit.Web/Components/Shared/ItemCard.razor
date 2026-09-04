@@ -1,0 +1,46 @@
+<article class="item-card @(NeedsAttention ? "needs-attention" : null)">
+    <div>
+        <div class="item-title">
+            <h3>@Title</h3>
+            @if (!string.IsNullOrWhiteSpace(PrimaryBadge))
+            {
+                <StatusBadge Value="@PrimaryBadge" />
+            }
+            @if (!string.IsNullOrWhiteSpace(SecondaryBadge))
+            {
+                <StatusBadge Value="@SecondaryBadge" />
+            }
+            @if (NeedsAttention)
+            {
+                <span class="warn" title="Needs attention">⚠</span>
+            }
+            <button type="button" class="btn btn-ghost-dark btn-icon btn-sm" title="Edit" @onclick="OnEdit">✏️</button>
+            <button type="button" class="btn btn-danger btn-icon btn-sm" title="Delete" @onclick="OnDelete">🗑</button>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(Detail))
+        {
+            <p style="margin:8px 0 0">@Detail</p>
+        }
+        @if (LastAudited is not null)
+        {
+            <p class="muted">Last audited: @LastAudited.Value.ToString("MMM d, yyyy, hh:mm tt")</p>
+        }
+        @ChildContent
+    </div>
+    <div>
+        @PhotoContent
+    </div>
+</article>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string? Detail { get; set; }
+    [Parameter] public string? PrimaryBadge { get; set; }
+    [Parameter] public string? SecondaryBadge { get; set; }
+    [Parameter] public bool NeedsAttention { get; set; }
+    [Parameter] public DateTime? LastAudited { get; set; }
+    [Parameter] public EventCallback OnEdit { get; set; }
+    [Parameter] public EventCallback OnDelete { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? PhotoContent { get; set; }
+}

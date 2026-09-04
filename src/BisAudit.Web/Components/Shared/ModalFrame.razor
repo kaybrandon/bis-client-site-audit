@@ -1,0 +1,21 @@
+<div class="modal-backdrop" @onclick="OnCancel">
+    <div class="modal-card" @onclick:stopPropagation="true">
+        <header>
+            <h3 style="margin:0">@Title</h3>
+            <button type="button" class="btn btn-ghost-dark btn-sm" @onclick="OnCancel">Close</button>
+        </header>
+        <div class="body">@ChildContent</div>
+        <footer>
+            <button type="button" class="btn btn-ghost-dark" @onclick="OnCancel">Cancel</button>
+            <button type="button" class="btn btn-primary" @onclick="OnSave">@SaveLabel</button>
+        </footer>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "Edit";
+    [Parameter] public string SaveLabel { get; set; } = "Save";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public EventCallback OnSave { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+}

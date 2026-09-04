@@ -1,0 +1,91 @@
+@page "/audits/{Id:guid}/purchases"
+@layout AuditLayout
+@attribute [Authorize]
+@rendermode InteractiveServer
+@inject AuditService Audits
+@inject DropdownService Dropdowns
+@inject IJSRuntime Js
+
+<PageTitle>Purchase Tracker</PageTitle>
+
+<div class="toolbar">
+    <div>
+        <h2>Purchase Tracker</h2>
+        <p class="count">@Items.Count documented items</p>
+    </div>
+    <button type="button" class="btn btn-primary" @onclick="NewItem">+ Add item</button>
+</div>
+
+@if (Items.Count == 0) { <div class="empty">No purchase items documented yet.</div> }
+
+@foreach (var item in Items)
+{
+    <ItemCard Title="@item.DisplayTitle" Detail="@item.DisplayDetail" PrimaryBadge="@item.Priority" SecondaryBadge="@item.Status"
+              NeedsAttention="item.NeedsAttention" LastAudited="item.LastAudited"
+              OnEdit="() => Edit(item)" OnDelete="() => Delete(item)">
+        <PhotoContent>
+            <PhotoAttach AuditId="Id" OwnerId="item.Id" OwnerType="@PhotoOwnerTypes.Purchase" Category="General" />
+        </PhotoContent>
+    </ItemCard>
+}
+
+@if (Draft is not null)
+{
+    <ModalFrame Title="Purchase item" OnSave="Save" OnCancel="() => Draft = null">
+        <div class="form-grid">
+            <label class="fld full">Item <InputText @bind-Value="Draft.Item" /></label>
+            <SelectField Label="Category" @bind-Value="Draft.Category" Options="Categories" />
+            <SelectField Label="Priority" @bind-Value="Draft.Priority" Options="Priorities" />
+            <label class="fld">Qty <InputNumber @bind-Value="Draft.Quantity" /></label>
+            <label class="fld">Est Unit Cost <InputNumber @bind-Value="Draft.EstimatedUnitCost" /></label>
+            <label class="fld">Monthly Savings $ <InputNumber @bind-Value="Draft.MonthlySavings" /></label>
+            <label class="fld">Savings Basis <InputText @bind-Value="Draft.SavingsBasis" /></label>
+            <SelectField Label="Status" @bind-Value="Draft.Status" Options="Statuses" />
+            <label class="fld full">Rationale <InputTextArea @bind-Value="Draft.Rationale" /></label>
+            <label class="fld check"><InputCheckbox @bind-Value="Draft.NeedsAttention" /> Needs Attention</label>
+        </div>
+    </ModalFrame>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    private List<PurchaseItem> Items { get; set; } = [];
+    private PurchaseItem? Draft { get; set; }
+    private List<string> Categories { get; set; } = [];
+    private List<string> Priorities { get; set; } = [];
+    private List<string> Statuses { get; set; } = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        Categories = await Dropdowns.OptionsAsync(DropdownKeys.PurchaseCategory);
+        Priorities = await Dropdowns.OptionsAsync(DropdownKeys.PurchasePriority);
+        Statuses = await Dropdowns.OptionsAsync(DropdownKeys.PurchaseStatus);
+        await Reload();
+    }
+
+    private async Task Reload() => Items = (await Audits.GetAsync(Id))?.Purchases.ToList() ?? [];
+    private void NewItem() => Draft = new PurchaseItem { AuditId = Id, Status = "To Quote", Quantity = 1 };
+    private void Edit(PurchaseItem item) => Draft = new PurchaseItem
+    {
+        Id = item.Id, AuditId = item.AuditId, Item = item.Item, Category = item.Category, Rationale = item.Rationale,
+        Priority = item.Priority, Quantity = item.Quantity, EstimatedUnitCost = item.EstimatedUnitCost,
+        MonthlySavings = item.MonthlySavings, SavingsBasis = item.SavingsBasis, Status = item.Status,
+        LastAudited = item.LastAudited, NeedsAttention = item.NeedsAttention
+    };
+
+    private async Task Save()
+    {
+        if (Draft is null) return;
+        if (Draft.Quantity < 0) Draft.Quantity = 0;
+        await Audits.SaveItemAsync(Draft);
+        Draft = null;
+        await Reload();
+    }
+
+    private async Task Delete(PurchaseItem item)
+    {
+        if (!await Js.InvokeAsync<bool>("confirm", "Delete this purchase item?")) return;
+        await Audits.DeleteItemAsync<PurchaseItem>(item.Id);
+        await Reload();
+    }
+}

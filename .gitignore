@@ -1,0 +1,28 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+.idea/
+*.db
+*.db-shm
+*.db-wal
+
+## Uploads (keep folder, ignore content)
+src/BisAudit.Web/wwwroot/uploads/**
+!src/BisAudit.Web/wwwroot/uploads/.gitkeep
+
+## Secrets / local
+appsettings.Local.json
+*.pfx
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Logs
+*.log
+logs/

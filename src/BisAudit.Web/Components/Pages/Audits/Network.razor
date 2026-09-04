@@ -1,0 +1,88 @@
+@page "/audits/{Id:guid}/network"
+@layout AuditLayout
+@attribute [Authorize]
+@rendermode InteractiveServer
+@inject AuditService Audits
+@inject DropdownService Dropdowns
+@inject IJSRuntime Js
+
+<PageTitle>Network & Infrastructure</PageTitle>
+
+<div class="toolbar">
+    <div>
+        <h2>Network & Infrastructure</h2>
+        <p class="count">@Items.Count documented items</p>
+    </div>
+    <button type="button" class="btn btn-primary" @onclick="NewItem">+ Add item</button>
+</div>
+
+@if (Items.Count == 0) { <div class="empty">No network items documented yet.</div> }
+
+@foreach (var item in Items)
+{
+    <ItemCard Title="@item.DisplayTitle" Detail="@item.DisplayDetail" PrimaryBadge="@item.Priority" SecondaryBadge="@item.Status"
+              NeedsAttention="item.NeedsAttention" LastAudited="item.LastAudited"
+              OnEdit="() => Edit(item)" OnDelete="() => Delete(item)">
+        <PhotoContent>
+            <PhotoAttach AuditId="Id" OwnerId="item.Id" OwnerType="@PhotoOwnerTypes.Network" Category="Network" />
+        </PhotoContent>
+    </ItemCard>
+}
+
+@if (Draft is not null)
+{
+    <ModalFrame Title="Network item" OnSave="Save" OnCancel="() => Draft = null">
+        <div class="form-grid">
+            <label class="fld">Device Name <InputText @bind-Value="Draft.DeviceName" /></label>
+            <SelectField Label="Category" @bind-Value="Draft.Category" Options="Categories" />
+            <SelectField Label="State" @bind-Value="Draft.State" Options="States" />
+            <SelectField Label="Priority" @bind-Value="Draft.Priority" Options="Priorities" />
+            <SelectField Label="Status" @bind-Value="Draft.Status" Options="Statuses" />
+            <label class="fld full">Details <InputTextArea @bind-Value="Draft.Details" /></label>
+            <label class="fld check"><InputCheckbox @bind-Value="Draft.NeedsAttention" /> Needs Attention</label>
+        </div>
+    </ModalFrame>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    private List<NetworkItem> Items { get; set; } = [];
+    private NetworkItem? Draft { get; set; }
+    private List<string> Categories { get; set; } = [];
+    private List<string> States { get; set; } = [];
+    private List<string> Priorities { get; set; } = [];
+    private List<string> Statuses { get; set; } = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        Categories = await Dropdowns.OptionsAsync(DropdownKeys.NetworkCategory);
+        States = await Dropdowns.OptionsAsync(DropdownKeys.NetworkState);
+        Priorities = await Dropdowns.OptionsAsync(DropdownKeys.NetworkPriority);
+        Statuses = await Dropdowns.OptionsAsync(DropdownKeys.NetworkStatus);
+        await Reload();
+    }
+
+    private async Task Reload() => Items = (await Audits.GetAsync(Id))?.NetworkItems.ToList() ?? [];
+    private void NewItem() => Draft = new NetworkItem { AuditId = Id, Status = "Current", State = "Current" };
+    private void Edit(NetworkItem item) => Draft = new NetworkItem
+    {
+        Id = item.Id, AuditId = item.AuditId, DeviceName = item.DeviceName, Category = item.Category, State = item.State,
+        Details = item.Details, Priority = item.Priority, Status = item.Status, LastAudited = item.LastAudited,
+        NeedsAttention = item.NeedsAttention
+    };
+
+    private async Task Save()
+    {
+        if (Draft is null) return;
+        await Audits.SaveItemAsync(Draft);
+        Draft = null;
+        await Reload();
+    }
+
+    private async Task Delete(NetworkItem item)
+    {
+        if (!await Js.InvokeAsync<bool>("confirm", "Delete this item?")) return;
+        await Audits.DeleteItemAsync<NetworkItem>(item.Id);
+        await Reload();
+    }
+}

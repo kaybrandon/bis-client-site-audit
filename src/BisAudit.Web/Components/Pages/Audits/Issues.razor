@@ -1,0 +1,109 @@
+@page "/audits/{Id:guid}/issues"
+@layout AuditLayout
+@attribute [Authorize]
+@rendermode InteractiveServer
+@inject AuditService Audits
+@inject DropdownService Dropdowns
+@inject IJSRuntime Js
+
+<PageTitle>Issues & Recommendations</PageTitle>
+
+<div class="toolbar">
+    <div>
+        <h2>Issues & Recommendations</h2>
+        <p class="count">@Items.Count documented items</p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <select class="form-select" style="width:auto" @bind="SeverityFilter">
+            <option value="">All severities</option>
+            @foreach (var s in Severities) { <option value="@s">@s</option> }
+        </select>
+        <select class="form-select" style="width:auto" @bind="StatusFilter">
+            <option value="">All statuses</option>
+            @foreach (var s in Statuses) { <option value="@s">@s</option> }
+        </select>
+        <button type="button" class="btn btn-primary" @onclick="NewItem">+ Add item</button>
+    </div>
+</div>
+
+@if (Filtered.Count == 0) { <div class="empty">No issues match the current filter.</div> }
+
+@foreach (var item in Filtered)
+{
+    <ItemCard Title="@item.DisplayTitle" Detail="@item.DisplayDetail" PrimaryBadge="@item.Severity" SecondaryBadge="@item.Status"
+              NeedsAttention="item.NeedsAttention" LastAudited="item.LastAudited"
+              OnEdit="() => Edit(item)" OnDelete="() => Delete(item)">
+        <PhotoContent>
+            <PhotoAttach AuditId="Id" OwnerId="item.Id" OwnerType="@PhotoOwnerTypes.Issue" Category="General" />
+        </PhotoContent>
+    </ItemCard>
+}
+
+@if (Draft is not null)
+{
+    <ModalFrame Title="Issue / recommendation" OnSave="Save" OnCancel="() => Draft = null">
+        <div class="form-grid">
+            <SelectField Label="Category" @bind-Value="Draft.Category" Options="Categories" />
+            <SelectField Label="Severity" @bind-Value="Draft.Severity" Options="Severities" />
+            <label class="fld full">Issue / Recommendation <InputText @bind-Value="Draft.IssueRecommendation" /></label>
+            <label class="fld">Priority Rank (1–5) <InputNumber @bind-Value="Draft.PriorityRank" min="1" max="5" /></label>
+            <label class="fld">Owner <InputText @bind-Value="Draft.Owner" /></label>
+            <SelectField Label="Status" @bind-Value="Draft.Status" Options="Statuses" />
+            <label class="fld">Monthly Cost Impact $ <InputNumber @bind-Value="Draft.MonthlyCostImpact" /></label>
+            <label class="fld">Impact Basis <InputText @bind-Value="Draft.ImpactBasis" /></label>
+            <label class="fld full">Notes <InputTextArea @bind-Value="Draft.Notes" /></label>
+            <label class="fld check"><InputCheckbox @bind-Value="Draft.NeedsAttention" /> Needs Attention</label>
+        </div>
+    </ModalFrame>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    private List<IssueItem> Items { get; set; } = [];
+    private IssueItem? Draft { get; set; }
+    private List<string> Categories { get; set; } = [];
+    private List<string> Severities { get; set; } = [];
+    private List<string> Statuses { get; set; } = [];
+    private string SeverityFilter { get; set; } = "";
+    private string StatusFilter { get; set; } = "";
+
+    private List<IssueItem> Filtered => Items
+        .Where(i => string.IsNullOrEmpty(SeverityFilter) || i.Severity == SeverityFilter)
+        .Where(i => string.IsNullOrEmpty(StatusFilter) || i.Status == StatusFilter)
+        .OrderBy(i => i.PriorityRank)
+        .ToList();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        Categories = await Dropdowns.OptionsAsync(DropdownKeys.IssueCategory);
+        Severities = await Dropdowns.OptionsAsync(DropdownKeys.IssueSeverity);
+        Statuses = await Dropdowns.OptionsAsync(DropdownKeys.IssueStatus);
+        await Reload();
+    }
+
+    private async Task Reload() => Items = (await Audits.GetAsync(Id))?.Issues.ToList() ?? [];
+    private void NewItem() => Draft = new IssueItem { AuditId = Id, Status = "Open", Severity = "Medium", PriorityRank = 3, NeedsAttention = true };
+    private void Edit(IssueItem item) => Draft = new IssueItem
+    {
+        Id = item.Id, AuditId = item.AuditId, Category = item.Category, IssueRecommendation = item.IssueRecommendation,
+        Severity = item.Severity, PriorityRank = item.PriorityRank, Owner = item.Owner, Status = item.Status,
+        Notes = item.Notes, MonthlyCostImpact = item.MonthlyCostImpact, ImpactBasis = item.ImpactBasis,
+        LastAudited = item.LastAudited, NeedsAttention = item.NeedsAttention
+    };
+
+    private async Task Save()
+    {
+        if (Draft is null) return;
+        Draft.PriorityRank = Math.Clamp(Draft.PriorityRank, 1, 5);
+        await Audits.SaveItemAsync(Draft);
+        Draft = null;
+        await Reload();
+    }
+
+    private async Task Delete(IssueItem item)
+    {
+        if (!await Js.InvokeAsync<bool>("confirm", "Delete this issue?")) return;
+        await Audits.DeleteItemAsync<IssueItem>(item.Id);
+        await Reload();
+    }
+}

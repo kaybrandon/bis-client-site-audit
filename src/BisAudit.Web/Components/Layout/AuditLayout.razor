@@ -1,0 +1,75 @@
+@inherits LayoutComponentBase
+@inject NavigationManager Nav
+@inject AuditService Audits
+@rendermode InteractiveServer
+
+<div class="page-shell">
+    <header class="app-header">
+        <div class="app-brand">
+            <a class="btn btn-ghost btn-icon" href="/" title="Dashboard">←</a>
+            <span class="brand-mark">🏢</span>
+            <div>
+                <h1>@(Audit?.CompanyName ?? "Audit")</h1>
+                <p>@(Audit?.Industry) · @(Audit?.Status)</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            @if (AuditId != Guid.Empty)
+            {
+                <a class="btn btn-ghost" href="@($"/api/audits/{AuditId}/contacts.csv")">⬇ Export Contacts</a>
+                <a class="btn btn-light" href="@($"/reports/{AuditId}")">Client Report</a>
+            }
+        </div>
+    </header>
+
+    <div class="audit-shell">
+        <aside class="audit-side no-print">
+            @foreach (var item in Links)
+            {
+                var href = $"/audits/{AuditId}/{item.Slug}";
+                var active = Nav.Uri.Contains($"/{item.Slug}", StringComparison.OrdinalIgnoreCase);
+                <a class="nav-item @(active ? "active" : null)" href="@href">
+                    <span class="num">@item.Num</span>
+                    <span>@item.Title</span>
+                </a>
+            }
+        </aside>
+        <main class="audit-main">
+            @Body
+        </main>
+    </div>
+</div>
+
+@code {
+    private ClientAudit? Audit { get; set; }
+    private Guid AuditId { get; set; }
+
+    private static readonly (string Num, string Slug, string Title)[] Links =
+    [
+        ("01", "overview", "Overview"),
+        ("02", "workstations", "Team & Workstations"),
+        ("03", "network", "Network & Infrastructure"),
+        ("04", "servers", "Servers, Storage & Cloud"),
+        ("05", "security", "Security, Cameras & AV"),
+        ("06", "software", "Software & Licensing"),
+        ("07", "issues", "Issues & Recommendations"),
+        ("08", "purchases", "Purchase Tracker"),
+        ("09", "photos", "Site Photos")
+    ];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        AuditId = ParseAuditId(Nav.Uri);
+        if (AuditId != Guid.Empty)
+            Audit = await Audits.GetHeaderAsync(AuditId);
+    }
+
+    private static Guid ParseAuditId(string uri)
+    {
+        var path = new Uri(uri).AbsolutePath.Trim('/');
+        var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 2 && parts[0] == "audits" && Guid.TryParse(parts[1], out var id))
+            return id;
+        return Guid.Empty;
+    }
+}
