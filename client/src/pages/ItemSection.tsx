@@ -34,6 +34,8 @@ export function ItemSection({
   const [options, setOptions] = useState<Record<string, string[]>>({})
   const [severityFilter, setSeverityFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
 
   const load = () => api.items(id, section).then(setItems)
 
@@ -52,9 +54,17 @@ export function ItemSection({
 
   const save = async () => {
     if (!draft) return
-    await api.saveItem(id, section, draft)
-    setDraft(null)
-    await load()
+    setSaving(true)
+    setError(null)
+    try {
+      await api.saveItem(id, section, draft)
+      setDraft(null)
+      await load()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Save failed. Check Wi-Fi and try again.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const remove = async (itemId: string) => {
@@ -83,9 +93,10 @@ export function ItemSection({
               {(options['Issue.Status'] || []).map((o) => <option key={o}>{o}</option>)}
             </select>
           )}
-          <button type="button" className="btn btn-primary" onClick={() => setDraft({ ...defaults, auditId: id })}>+ Add item</button>
+          <button type="button" className="btn btn-primary" onClick={() => { setError(null); setDraft({ ...defaults, auditId: id }) }}>+ Add item</button>
         </div>
       </div>
+      {error && !draft && <p className="error">{error}</p>}
       {filtered.length === 0 && <div className="empty">No items match the current filter.</div>}
       {filtered.map((item) => (
         <article className={`item-card ${item.needsAttention ? 'needs-attention' : ''}`} key={String(item.id)}>
@@ -94,8 +105,10 @@ export function ItemSection({
               <h3>{titleOf(item)}</h3>
               {(badgesOf?.(item) || []).map((b) => b && <StatusBadge key={b} value={b} />)}
               {item.needsAttention ? <span className="warn" title="Needs attention">⚠</span> : null}
-              <button type="button" className="btn btn-ghost-dark btn-icon btn-sm" onClick={() => setDraft({ ...item })}>✏️</button>
-              <button type="button" className="btn btn-danger btn-icon btn-sm" onClick={() => void remove(String(item.id))}>🗑</button>
+              <div className="item-title-actions">
+                <button type="button" className="btn btn-ghost-dark" onClick={() => { setError(null); setDraft({ ...item }) }}>Edit</button>
+                <button type="button" className="btn btn-danger" onClick={() => void remove(String(item.id))}>Delete</button>
+              </div>
             </div>
             {(() => {
               const detail = detailOf?.(item)
@@ -107,7 +120,7 @@ export function ItemSection({
         </article>
       ))}
       {draft && (
-        <Modal title={title} onSave={() => void save()} onClose={() => setDraft(null)}>
+        <Modal title={title} busy={saving} error={error} onSave={() => void save()} onClose={() => { setDraft(null); setError(null) }}>
           <div className="form-grid">
             {fields.map((f) => (
               <Field key={f.key} label={f.kind === 'check' ? '' : f.label} full={f.full} check={f.kind === 'check'}>

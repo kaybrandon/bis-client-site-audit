@@ -29,7 +29,7 @@ export function Login() {
         <p className="muted">Sign in with a local account. Windows Authentication and Entra ID can be enabled later.</p>
         {error && <p className="error">{error}</p>}
         <label className="fld">Email
-          <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} autoComplete="username" />
+          <input type="email" inputMode="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} autoComplete="username" />
         </label>
         <label className="fld" style={{ marginTop: 12 }}>Password
           <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} autoComplete="current-password" />

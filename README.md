@@ -23,6 +23,7 @@ Target host: Windows Server + IIS on Dell hardware, SQL Server on the same box o
 | Node.js | **20+** (SPA build) | Not needed after you copy `client/dist` |
 | Logs | `src/BisAudit.Api/logs/bisaudit-YYYYMMDD.log` | `C:\inetpub\bis-audit-api\logs\` (grant Modify to app-pool identity) |
 | Seed admin | `admin@bis.local` / `Admin!23456` | Change `Seed` before go-live; `LoadSampleAudit: false` |
+| Field clients | Tablet / laptop browsers (iPad-width + phone) | Same SPA; **Take photo** / **From library**; no SignalR |
 
 ```powershell
 # Local (see docs/SETUP.md)

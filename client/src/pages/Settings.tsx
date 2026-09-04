@@ -23,8 +23,13 @@ export function Settings() {
   }
 
   const save = async (list: Draft) => {
-    await api.saveDropdown(list.id, list.options)
-    setLists((all) => all.map((x) => x.id === list.id ? { ...x, message: 'Saved.' } : x))
+    try {
+      await api.saveDropdown(list.id, list.options)
+      setLists((all) => all.map((x) => x.id === list.id ? { ...x, message: 'Saved.' } : x))
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Save failed. Check Wi-Fi and try again.'
+      setLists((all) => all.map((x) => x.id === list.id ? { ...x, message } : x))
+    }
   }
 
   return (
@@ -46,7 +51,7 @@ export function Settings() {
           <section className="panel" style={{ padding: '18px 20px', marginBottom: 16 }} key={list.id}>
             <div className="toolbar">
               <h3 style={{ margin: 0 }}>{list.displayName}</h3>
-              <button type="button" className="btn btn-primary btn-sm" onClick={() => void save(list)}>💾 Save</button>
+              <button type="button" className="btn btn-primary" onClick={() => void save(list)}>Save</button>
             </div>
             <div className="chip-row">
               {list.options.map((option) => (
@@ -65,7 +70,7 @@ export function Settings() {
                 <button type="button" onClick={() => add(list)}>+ Add</button>
               </span>
             </div>
-            {list.message && <p className="muted" style={{ marginTop: 10 }}>{list.message}</p>}
+            {list.message && <p className={list.message === 'Saved.' ? 'muted' : 'error'} style={{ marginTop: 10 }}>{list.message}</p>}
           </section>
         ))}
       </div>

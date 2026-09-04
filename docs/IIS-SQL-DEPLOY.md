@@ -2,6 +2,8 @@
 
 Two layouts, same bits: publish the API, build the React app.
 
+Traffic is ordinary **HTTP/HTTPS** (JSON + multipart photos). No SignalR, no sticky WebSocket. Field techs use tablet/laptop browsers; the SPA is static files.
+
 | Layout | When |
 |---|---|
 | **A — one IIS site** | API serves the React files from `wwwroot`. Easiest. No CORS. |

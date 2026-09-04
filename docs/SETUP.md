@@ -114,4 +114,12 @@ All live under `src/BisAudit.Api/appsettings.json` (override with `appsettings.D
 | `Logging:File:RetainedFileCountLimit` | How many daily log files to keep (default 30). |
 | `Serilog:MinimumLevel` | How chatty the log is. See [LOGGING.md](LOGGING.md). |
 
+## Field use (tablets / laptops on site)
+
+- UI is built for **iPad-ish widths** and phones: 44px tap targets, sticky horizontal section nav, 16px form text (avoids iOS zoom).
+- Photos: **Take photo** opens the rear camera (`<input capture="environment">`); **From library** picks existing images (multi-select). Uploads are ordinary HTTP multipart — **no SignalR / WebSockets**.
+- Large camera shots are resized in the browser before upload (API max **12 MB**).
+- Spotty Wi-Fi: GET retries once; failed uploads show **Retry**; failed saves stay on the form with an error.
+- Refresh the page if something looks stale after a dropped connection.
+
 Next: [IIS-SQL-DEPLOY.md](IIS-SQL-DEPLOY.md) · [LOGGING.md](LOGGING.md)

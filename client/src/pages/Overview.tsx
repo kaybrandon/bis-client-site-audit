@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useOutletContext, useParams } from 'react-router-dom'
 import { api } from '../api'
 import { Field } from '../components/Modal'
+import { PhotoPicker } from '../components/PhotoPicker'
 import { KEYS, type AuditContact, type AuditDetail, type ContactRole, type SubLocation } from '../types'
 
 type Ctx = { audit: AuditDetail | null; reload: () => void }
@@ -17,6 +18,8 @@ export function Overview() {
   const [industries, setIndustries] = useState<string[]>([])
   const [statuses, setStatuses] = useState<string[]>([])
   const [message, setMessage] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     void api.dropdown(KEYS.auditIndustry).then(setIndustries)
@@ -43,18 +46,18 @@ export function Overview() {
     set({ contacts: form.contacts.map((c) => c.role === role ? { ...c, ...patch } : c) })
 
   const save = async () => {
-    await api.saveOverview(id, form)
-    setMessage('Saved.')
-    reload()
-  }
-
-  const uploadClient = async (file?: File) => {
-    if (!file) return
-    const photo = await api.uploadPhoto(id, file, { category: 'Site Photo', ownerType: 'Audit', caption: 'Client photo' })
-    const next = { ...form, clientPhotoPath: photo.relativePath }
-    setForm(next)
-    await api.saveOverview(id, next)
-    reload()
+    setSaving(true)
+    setError(null)
+    try {
+      await api.saveOverview(id, form)
+      setMessage('Saved.')
+      reload()
+    } catch (e) {
+      setMessage(null)
+      setError(e instanceof Error ? e.message : 'Save failed. Check Wi-Fi and try again.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -64,19 +67,31 @@ export function Overview() {
           <h2>Overview</h2>
           <p className="count">Client profile, contacts, and engagement scope.</p>
         </div>
-        <button type="button" className="btn btn-primary" onClick={() => void save()}>Save</button>
+        <button type="button" className="btn btn-primary" disabled={saving} onClick={() => void save()}>
+          {saving ? 'Saving…' : 'Save'}
+        </button>
       </div>
       {message && <p className="muted">{message}</p>}
+      {error && <p className="error">{error}</p>}
       <div className="panel" style={{ padding: 20 }}>
         <div className="form-grid">
-          <div className="full" style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-            <div className="client-thumb" style={{ width: 88, height: 88 }}>
+          <div className="full client-photo-row">
+            <div className="client-thumb client-thumb-lg">
               {form.clientPhotoPath ? <img src={api.photoSrc(form.clientPhotoPath)} alt="Client" /> : <span>🏢</span>}
             </div>
-            <label className="btn btn-ghost-dark btn-sm">
-              Client photo
-              <input type="file" accept="image/*" hidden onChange={(e) => void uploadClient(e.target.files?.[0])} />
-            </label>
+            <PhotoPicker
+              allowMultiple={false}
+              compact
+              cameraLabel="Take client photo"
+              libraryLabel="Choose photo"
+              upload={async (file) => {
+                const photo = await api.uploadPhoto(id, file, { category: 'Site Photo', ownerType: 'Audit', caption: 'Client photo' })
+                const next = { ...form, clientPhotoPath: photo.relativePath }
+                setForm(next)
+                await api.saveOverview(id, next)
+                reload()
+              }}
+            />
           </div>
           <Field label="Company Name"><input value={form.companyName} onChange={(e) => set({ companyName: e.target.value })} /></Field>
           <Field label="Industry">
@@ -110,8 +125,8 @@ export function Overview() {
               <div className="form-grid">
                 <Field label="Name"><input value={c.name ?? ''} onChange={(e) => setContact(role, { name: e.target.value })} /></Field>
                 <Field label="Title"><input value={c.title ?? ''} onChange={(e) => setContact(role, { title: e.target.value })} /></Field>
-                <Field label="Email"><input value={c.email ?? ''} onChange={(e) => setContact(role, { email: e.target.value })} /></Field>
-                <Field label="Phone"><input value={c.phone ?? ''} onChange={(e) => setContact(role, { phone: e.target.value })} /></Field>
+                <Field label="Email"><input type="email" inputMode="email" autoComplete="email" value={c.email ?? ''} onChange={(e) => setContact(role, { email: e.target.value })} /></Field>
+                <Field label="Phone"><input type="tel" inputMode="tel" autoComplete="tel" value={c.phone ?? ''} onChange={(e) => setContact(role, { phone: e.target.value })} /></Field>
               </div>
             </div>
           )
@@ -133,7 +148,7 @@ export function Overview() {
             }} /></Field>
           </div>
         ))}
-        <button type="button" className="btn btn-ghost-dark btn-sm" onClick={() => set({ subLocations: [...form.subLocations, { id: crypto.randomUUID(), auditId: id, name: '' } as SubLocation] })}>
+        <button type="button" className="btn btn-ghost-dark" onClick={() => set({ subLocations: [...form.subLocations, { id: crypto.randomUUID(), auditId: id, name: '' } as SubLocation] })}>
           + Add sub-location
         </button>
       </div>

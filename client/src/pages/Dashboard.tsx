@@ -75,10 +75,10 @@ export function Dashboard() {
               </div>
               <div className="card-foot">
                 <span className={`open-items ${audit.openItems === 0 ? 'zero' : ''}`}>{audit.openItems} open items</span>
-                <div className="icon-row">
-                  <Link className="btn btn-ghost-dark btn-icon" to={`/reports/${audit.id}`} title="Client Report">📄</Link>
-                  <button type="button" className="btn btn-ghost-dark btn-icon" title="Duplicate" onClick={() => void duplicate(audit.id)}>⧉</button>
-                  <Link className="btn btn-ghost-dark btn-icon" to={`/audits/${audit.id}/overview`} title="Open">→</Link>
+                <div className="card-actions">
+                  <Link className="btn btn-primary" to={`/audits/${audit.id}/overview`}>Open</Link>
+                  <Link className="btn btn-ghost-dark" to={`/reports/${audit.id}`}>Report</Link>
+                  <button type="button" className="btn btn-ghost-dark" onClick={() => void duplicate(audit.id)}>Duplicate</button>
                 </div>
               </div>
             </article>

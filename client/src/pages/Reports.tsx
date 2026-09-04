@@ -19,22 +19,24 @@ export function Reports() {
             <p className="muted">Printable summaries with cost-of-inaction, investment, and payback.</p>
           </div>
         </div>
-        <table className="data">
-          <thead>
-            <tr><th>Company</th><th>Status</th><th>Open issues</th><th>Critical / high</th><th /></tr>
-          </thead>
-          <tbody>
-            {items.map((a) => (
-              <tr key={a.id}>
-                <td>{a.companyName}</td>
-                <td><StatusBadge value={a.status} /></td>
-                <td>{a.openItems}</td>
-                <td>{a.openCriticalHigh}</td>
-                <td><Link className="btn btn-primary btn-sm" to={`/reports/${a.id}`}>Open report</Link></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="table-scroll">
+          <table className="data">
+            <thead>
+              <tr><th>Company</th><th>Status</th><th>Open issues</th><th>Critical / high</th><th /></tr>
+            </thead>
+            <tbody>
+              {items.map((a) => (
+                <tr key={a.id}>
+                  <td>{a.companyName}</td>
+                  <td><StatusBadge value={a.status} /></td>
+                  <td>{a.openItems}</td>
+                  <td>{a.openCriticalHigh}</td>
+                  <td><Link className="btn btn-primary" to={`/reports/${a.id}`}>Open report</Link></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )
@@ -84,6 +86,7 @@ export function ReportPrint() {
           <p><strong>Scope:</strong> {audit.auditScope || '—'}</p>
           <p><strong>Previous IT support:</strong> {audit.previousItSupport || '—'}</p>
           <h2>Contacts</h2>
+          <div className="table-scroll">
           <table className="data">
             <thead><tr><th>Role</th><th>Name</th><th>Title</th><th>Email</th><th>Phone</th></tr></thead>
             <tbody>
@@ -92,7 +95,9 @@ export function ReportPrint() {
               ))}
             </tbody>
           </table>
+          </div>
           <h2>Open issues</h2>
+          <div className="table-scroll">
           <table className="data">
             <thead><tr><th>Issue / Recommendation</th><th>Severity</th><th>Status</th><th>Monthly impact</th><th>Notes</th></tr></thead>
             <tbody>
@@ -107,7 +112,9 @@ export function ReportPrint() {
               ))}
             </tbody>
           </table>
+          </div>
           <h2>Purchase tracker</h2>
+          <div className="table-scroll">
           <table className="data">
             <thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th>Monthly savings</th><th>Status</th></tr></thead>
             <tbody>
@@ -122,6 +129,7 @@ export function ReportPrint() {
               ))}
             </tbody>
           </table>
+          </div>
           {([
             ['Team & workstations', audit.workstations, (w: Record<string, unknown>) => `${w.userName || ''} / ${w.deviceName || ''}`.replace(/^ \/ | \/ $/g, '') || 'Workstation'],
             ['Network & infrastructure', audit.networkItems, (w: Record<string, unknown>) => String(w.deviceName || 'Network item')],
@@ -131,6 +139,7 @@ export function ReportPrint() {
           ] as const).map(([title, rows, label]) => (
             <div key={title}>
               <h2>{title}</h2>
+              <div className="table-scroll">
               <table className="data">
                 <thead><tr><th>Item</th><th>Status</th></tr></thead>
                 <tbody>
@@ -139,6 +148,7 @@ export function ReportPrint() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           ))}
           {audit.photos.length > 0 && (

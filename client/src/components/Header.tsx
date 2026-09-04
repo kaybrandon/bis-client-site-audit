@@ -14,7 +14,7 @@ export function Header({ onNewAudit }: { onNewAudit?: () => void }) {
         </div>
       </Link>
       <div className="header-actions">
-        <Link className="btn btn-ghost" to="/reports">Client Reports</Link>
+        <Link className="btn btn-ghost" to="/reports">Reports</Link>
         <Link className="btn btn-ghost" to="/settings">Settings</Link>
         {onNewAudit
           ? <button type="button" className="btn btn-light" onClick={onNewAudit}>+ New audit</button>

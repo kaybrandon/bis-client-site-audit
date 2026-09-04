@@ -4,14 +4,24 @@ function token() {
   return localStorage.getItem('bis.token')
 }
 
-async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+async function request<T>(path: string, init: RequestInit = {}, attempt = 0): Promise<T> {
   const headers = new Headers(init.headers)
   if (!headers.has('Authorization') && token())
     headers.set('Authorization', `Bearer ${token()}`)
   if (init.body && !(init.body instanceof FormData) && !headers.has('Content-Type'))
     headers.set('Content-Type', 'application/json')
 
-  const res = await fetch(`${API}${path}`, { ...init, headers })
+  let res: Response
+  try {
+    res = await fetch(`${API}${path}`, { ...init, headers })
+  } catch {
+    const method = (init.method || 'GET').toUpperCase()
+    if (method === 'GET' && attempt === 0) {
+      await new Promise((r) => setTimeout(r, 500))
+      return request<T>(path, init, 1)
+    }
+    throw new Error('Network error. Check Wi-Fi and try again.')
+  }
   if (res.status === 401) {
     localStorage.removeItem('bis.token')
     if (!path.startsWith('/api/auth/login'))
@@ -64,8 +74,10 @@ export const api = {
     request<void>(`/api/audits/${id}/${section}/${itemId}`, { method: 'DELETE' }),
   photos: (id: string) => request<import('./types').SitePhoto[]>(`/api/audits/${id}/photos`),
   uploadPhoto: async (id: string, file: File, extra: Record<string, string | undefined>) => {
+    const { preparePhoto } = await import('./image')
+    const prepared = await preparePhoto(file)
     const fd = new FormData()
-    fd.append('file', file)
+    fd.append('file', prepared)
     Object.entries(extra).forEach(([k, v]) => { if (v) fd.append(k, v) })
     return request<import('./types').SitePhoto>(`/api/audits/${id}/photos`, { method: 'POST', body: fd })
   },

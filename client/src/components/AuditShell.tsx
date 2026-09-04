@@ -36,12 +36,14 @@ export function AuditShell() {
       </header>
       <div className="audit-shell">
         <aside className="audit-side no-print">
-          {SECTIONS.map((s) => (
-            <NavLink key={s.slug} to={`/audits/${id}/${s.slug}`} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-              <span className="num">{s.num}</span>
-              <span>{s.title}</span>
-            </NavLink>
-          ))}
+          <nav className="audit-nav" aria-label="Audit sections">
+            {SECTIONS.map((s) => (
+              <NavLink key={s.slug} to={`/audits/${id}/${s.slug}`} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                <span className="num">{s.num}</span>
+                <span>{s.title}</span>
+              </NavLink>
+            ))}
+          </nav>
         </aside>
         <main className="audit-main">
           <Outlet context={{ audit, reload: () => id && api.audit(id).then(setAudit) }} />

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { api } from '../api'
+import { PhotoPicker } from '../components/PhotoPicker'
 import { KEYS, type SitePhoto } from '../types'
 
 export function Photos() {
@@ -20,12 +21,6 @@ export function Photos() {
     })
   }, [id])
 
-  const upload = async (file?: File) => {
-    if (!file) return
-    await api.uploadPhoto(id, file, { category: uploadCategory, ownerType: 'Audit' })
-    await load()
-  }
-
   const filtered = items.filter((p) => !filter || p.category === filter)
 
   return (
@@ -35,32 +30,46 @@ export function Photos() {
           <h2>Site Photos</h2>
           <p className="count">{items.length} photos in the global library (including item attachments)</p>
         </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          <select className="form-select" value={filter} onChange={(e) => setFilter(e.target.value)}>
-            <option value="">All categories</option>
-            {categories.map((c) => <option key={c}>{c}</option>)}
-          </select>
-          <select className="form-select" value={uploadCategory} onChange={(e) => setUploadCategory(e.target.value)}>
-            {categories.map((c) => <option key={c}>{c}</option>)}
-          </select>
-          <label className="btn btn-primary">
-            + Add photo
-            <input type="file" accept="image/*" hidden onChange={(e) => void upload(e.target.files?.[0])} />
+        <div className="toolbar-filters">
+          <label className="fld">
+            Filter
+            <select className="form-select" value={filter} onChange={(e) => setFilter(e.target.value)}>
+              <option value="">All categories</option>
+              {categories.map((c) => <option key={c}>{c}</option>)}
+            </select>
+          </label>
+          <label className="fld">
+            New photo category
+            <select className="form-select" value={uploadCategory} onChange={(e) => setUploadCategory(e.target.value)}>
+              {categories.map((c) => <option key={c}>{c}</option>)}
+            </select>
           </label>
         </div>
       </div>
-      <p className="muted">Upload site-level photos here. Item cards across the audit also attach photos; they appear in this library.</p>
+      <div className="panel photo-upload-panel">
+        <p className="muted" style={{ marginTop: 0 }}>
+          Take a photo on a phone or tablet, or pick from the library. Item-card attachments also show here.
+        </p>
+        <PhotoPicker
+          showCaption
+          upload={async (file, caption) => {
+            await api.uploadPhoto(id, file, { category: uploadCategory, ownerType: 'Audit', caption })
+            await load()
+          }}
+        />
+      </div>
       {filtered.length === 0 ? <div className="empty">No photos yet.</div> : (
         <div className="photo-grid">
           {filtered.map((photo) => (
             <figure className="photo-tile" key={photo.id}>
-              <img src={api.photoSrc(photo.publicUrl || photo.relativePath)} alt={photo.caption} />
+              <img src={api.photoSrc(photo.publicUrl || photo.relativePath)} alt={photo.caption || photo.fileName} />
               <figcaption>
                 <strong>{photo.category}</strong><br />
+                {photo.caption ? <>{photo.caption}<br /></> : null}
                 {photo.ownerType}{photo.ownerId ? ' attachment' : ''}<br />
                 {photo.fileName}
-                <div style={{ marginTop: 6 }}>
-                  <button type="button" className="btn btn-danger btn-sm" onClick={() => {
+                <div className="photo-tile-actions">
+                  <button type="button" className="btn btn-danger" onClick={() => {
                     if (confirm('Delete this photo?')) void api.deletePhoto(photo.id).then(load)
                   }}>Delete</button>
                 </div>
