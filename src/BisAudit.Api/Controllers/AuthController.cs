@@ -10,7 +10,7 @@ namespace BisAudit.Api.Controllers;
 
 [ApiController]
 [Route("api/auth")]
-public class AuthController(UserManager<ApplicationUser> users, TokenService tokens) : ControllerBase
+public class AuthController(UserManager<ApplicationUser> users, TokenService tokens, ILogger<AuthController> logger) : ControllerBase
 {
     public record LoginRequest(string Email, string Password);
     public record LoginResponse(string Token, string Email, DateTime ExpiresUtc);
@@ -21,10 +21,14 @@ public class AuthController(UserManager<ApplicationUser> users, TokenService tok
     {
         var user = await users.FindByEmailAsync(request.Email);
         if (user is null || !await users.CheckPasswordAsync(user, request.Password))
+        {
+            logger.LogWarning("Failed login for {Email}", request.Email);
             return Unauthorized(new { message = "Invalid email or password." });
+        }
 
         var token = tokens.Create(user);
         var minutes = int.TryParse(HttpContext.RequestServices.GetRequiredService<IConfiguration>()["Jwt:ExpiresMinutes"], out var m) ? m : 720;
+        logger.LogInformation("User {Email} signed in", user.Email);
         return new LoginResponse(token, user.Email ?? request.Email, DateTime.UtcNow.AddMinutes(minutes));
     }
 

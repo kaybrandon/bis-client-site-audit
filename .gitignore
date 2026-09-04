@@ -30,5 +30,7 @@ client/.env.local
 .DS_Store
 Thumbs.db
 
-## Logs
-logs/
+## Logs (keep folder marker so IIS publish has a logs directory)
+**/logs/*.log
+**/logs/stdout*
+!src/BisAudit.Api/logs/.gitkeep

@@ -1,10 +1,46 @@
 # BIS Client IT Audit
 
-Infrastructure assurance workspace — Phase 1 rebuild of the Base44 **bis-audit-flow** app.
-
-**Stack (locked):** React + TypeScript + Vite SPA, ASP.NET Core 8 Web API, EF Core + SQL Server. No Blazor. No Base44 runtime or package.
+Infrastructure assurance workspace — Phase 1 rebuild of the Base44 **bis-audit-flow** app. React + TypeScript + Vite SPA, ASP.NET Core 8 Web API, EF Core + SQL Server. No Blazor. No Base44.
 
 Target host: Windows Server + IIS on Dell hardware, SQL Server on the same box or nearby.
+
+## For developers / IIS deploy
+
+| Doc | Use when |
+|---|---|
+| **[docs/SETUP.md](docs/SETUP.md)** | Clone, connection string, migrate, run, seed admin, config keys |
+| **[docs/IIS-SQL-DEPLOY.md](docs/IIS-SQL-DEPLOY.md)** | IIS site + app pool, `dotnet publish`, SQL login, migrations, HTTPS, 500.30 |
+| **[docs/LOGGING.md](docs/LOGGING.md)** | Console / `logs/` files / Event Viewer, staging detailed errors, bug-report checklist |
+
+### Environment (one screen)
+
+| Item | Development | Production (Dell / Windows Server) |
+|---|---|---|
+| OS | Windows 10/11 64-bit | Windows Server 2019/2022 |
+| App | `dotnet run` + Vite (`:5088` / `:5173`) | IIS site, app pool **No Managed Code** |
+| .NET | **SDK 8.0** | **Hosting Bundle 8.0** (runtime + ANCM) |
+| SQL Server | Express / Developer / LocalDB / Docker | Express or Standard (local or nearby) |
+| Node.js | **20+** (SPA build) | Not needed after you copy `client/dist` |
+| Logs | `src/BisAudit.Api/logs/bisaudit-YYYYMMDD.log` | `C:\inetpub\bis-audit-api\logs\` (grant Modify to app-pool identity) |
+| Seed admin | `admin@bis.local` / `Admin!23456` | Change `Seed` before go-live; `LoadSampleAudit: false` |
+
+```powershell
+# Local (see docs/SETUP.md)
+git clone https://github.com/kaybrandon/bis-client-site-audit.git
+cd bis-client-site-audit
+dotnet restore BisAudit.sln
+dotnet ef database update --project src/BisAudit.Api
+dotnet run --project src/BisAudit.Api --launch-profile http
+# other terminal:
+cd client && npm install && npm run dev
+```
+
+```powershell
+# Publish (see docs/IIS-SQL-DEPLOY.md)
+dotnet publish src/BisAudit.Api -c Release -o C:\inetpub\bis-audit-api
+cd client && npm ci && npm run build
+Copy-Item -Recurse -Force client\dist\* C:\inetpub\bis-audit-api\wwwroot\
+```
 
 | Piece | Location |
 |---|---|
@@ -23,7 +59,7 @@ Override in `src/BisAudit.Api/appsettings.json` under `Seed`. Set `LoadSampleAud
 
 ## Run locally (Windows)
 
-See **[docs/SETUP.md](docs/SETUP.md)** for the full walk-through.
+Full walk-through: **[docs/SETUP.md](docs/SETUP.md)**.
 
 ```powershell
 dotnet restore BisAudit.sln
@@ -36,16 +72,16 @@ npm install
 npm run dev
 ```
 
-- API: http://localhost:5088 (Swagger at `/swagger`)  
-- UI: http://localhost:5173 (Vite proxies `/api` and `/uploads` to the API)  
+- API: http://localhost:5088 (Swagger at `/swagger`)
+- UI: http://localhost:5173 (Vite proxies `/api` and `/uploads` to the API)
 - CORS is also enabled for `http://localhost:5173` if you set `VITE_API_URL=http://localhost:5088`
 
 ## Deploy to IIS + SQL Server
 
-See **[docs/IIS-SQL-DEPLOY.md](docs/IIS-SQL-DEPLOY.md)**.
+Full walk-through: **[docs/IIS-SQL-DEPLOY.md](docs/IIS-SQL-DEPLOY.md)**.
 
-- **Same site:** publish the API, copy `client/dist` into `wwwroot/app`.  
-- **Separate sites:** API on one hostname, static SPA on another, set `VITE_API_URL` and `Cors:Origins`.
+- **Same site (layout A):** publish the API, copy `client/dist` into `wwwroot`.
+- **Separate sites (layout B):** API on one hostname, static SPA on another; set `VITE_API_URL` and `Cors:Origins`.
 
 ## Progress calculation
 
@@ -69,9 +105,9 @@ Dashboard and report **audit progress** is a weighted sum (weights add to 100):
 
 ### Report formulas
 
-- **Annual cost of inaction** = `Σ(MonthlyCostImpact)` of open issues × 12  
-- **Investment** = `Σ(Qty × EstUnitCost)` of purchases whose status is not `Cancelled`  
-- **Annual savings** = `Σ(MonthlySavings)` of those purchases × 12  
+- **Annual cost of inaction** = `Σ(MonthlyCostImpact)` of open issues × 12
+- **Investment** = `Σ(Qty × EstUnitCost)` of purchases whose status is not `Cancelled`
+- **Annual savings** = `Σ(MonthlySavings)` of those purchases × 12
 - **Payback (months)** = `Investment / (AnnualSavings / 12)` when `Investment > 0` and savings &gt; 0
 
 ## Auth
@@ -96,4 +132,4 @@ Uploaded through `POST /api/audits/{id}/photos` (multipart). Files land under `w
 
 ## Logging
 
-See **[docs/LOGGING.md](docs/LOGGING.md)** (console, IIS stdout, what to check when something fails).
+Serilog writes **console** and a **daily rolling file** under `logs/bisaudit-YYYYMMDD.log`. IIS stdout (startup / 500.30) is `logs/stdout_*.log`. Grant the app-pool identity Modify on `logs\` — see **[docs/LOGGING.md](docs/LOGGING.md)**.

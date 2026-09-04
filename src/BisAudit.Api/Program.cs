@@ -6,22 +6,34 @@ using BisAudit.Api.Data.Seed;
 using BisAudit.Api.Options;
 using BisAudit.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var logsDir = Path.Combine(builder.Environment.ContentRootPath, builder.Configuration["Logging:File:Path"] ?? "logs");
+Directory.CreateDirectory(logsDir);
+var retainDays = builder.Configuration.GetValue("Logging:File:RetainedFileCountLimit", 30);
+
+builder.Host.UseSerilog((_, lc) => lc
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .WriteTo.File(
+        Path.Combine(logsDir, "bisaudit-.log"),
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: retainDays,
+        shared: true));
 
 builder.Services.Configure<UploadOptions>(builder.Configuration.GetSection(UploadOptions.SectionName));
 builder.Services.Configure<SeedOptions>(builder.Configuration.GetSection(SeedOptions.SectionName));
 builder.Services.Configure<FormOptions>(o => o.MultipartBodyLengthLimit = 12_000_000);
-
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
-builder.Logging.AddDebug();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -89,14 +101,33 @@ var app = builder.Build();
 
 await DatabaseSeeder.SeedAsync(app.Services);
 
-if (app.Environment.IsDevelopment())
+var detailedErrors = app.Configuration.GetValue("Logging:DetailedErrors", false)
+                     || app.Environment.IsDevelopment();
+if (detailedErrors)
 {
+    app.UseDeveloperExceptionPage();
     app.UseSwagger();
     app.UseSwaggerUI();
+}
+else
+{
+    app.UseExceptionHandler(errorApp =>
+    {
+        errorApp.Run(async context =>
+        {
+            var ex = context.Features.Get<IExceptionHandlerPathFeature>();
+            var logger = context.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("Pipeline");
+            logger.LogError(ex?.Error, "Unhandled exception on {Method} {Path}", context.Request.Method, context.Request.Path);
+            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+            await context.Response.WriteAsJsonAsync(new { message = "An error occurred." });
+        });
+    });
 }
 
 if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
+
+app.UseSerilogRequestLogging();
 
 app.UseCors("vite");
 app.UseAuthentication();
