@@ -1,12 +1,14 @@
-import { Link, NavLink, Outlet, useParams } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation, useParams } from 'react-router-dom'
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../api'
-import { SECTIONS, sectionCue, type AuditDetail } from '../types'
+import { SECTIONS, nextIncompleteSection, sectionCue, type AuditDetail } from '../types'
 
 export type AuditOutlet = { audit: AuditDetail | null; reload: () => Promise<void> }
 
 export function AuditShell() {
   const { id } = useParams()
+  const loc = useLocation()
+  const current = loc.pathname.split('/').pop() || 'overview'
   const [audit, setAudit] = useState<AuditDetail | null>(null)
 
   const reload = useCallback(async () => {
@@ -17,6 +19,8 @@ export function AuditShell() {
   useEffect(() => {
     void reload()
   }, [reload])
+
+  const next = nextIncompleteSection(audit?.sections, current)
 
   return (
     <div className="page-shell">
@@ -61,6 +65,18 @@ export function AuditShell() {
               )
             })}
           </nav>
+          <div className="audit-strip">
+            <span className="audit-strip-progress">
+              {audit ? `${audit.progress}% complete` : 'Loading…'}
+            </span>
+            {id && next ? (
+              <Link className="btn btn-primary btn-sm" to={`/audits/${id}/${next.slug}`}>
+                Next incomplete: {next.short}
+              </Link>
+            ) : (
+              <span className="muted">All sections started</span>
+            )}
+          </div>
         </aside>
         <main className="audit-main">
           <Outlet context={{ audit, reload } satisfies AuditOutlet} />

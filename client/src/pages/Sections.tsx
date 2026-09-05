@@ -18,21 +18,21 @@ export function Workstations() {
       fields={[
         { key: 'deviceName', label: 'Device Name' },
         { key: 'userName', label: 'User Name' },
-        { key: 'email', label: 'Email' },
-        { key: 'phone', label: 'Phone' },
         { key: 'department', label: 'Department', kind: 'select', optionsKey: KEYS.workstationDepartment },
         { key: 'workMode', label: 'Work Mode', kind: 'select', optionsKey: KEYS.workstationWorkMode },
         { key: 'deviceType', label: 'Device Type', kind: 'select', optionsKey: KEYS.workstationDeviceType },
-        { key: 'operatingSystem', label: 'OS' },
-        { key: 'monitors', label: 'Monitors' },
         { key: 'status', label: 'Status', kind: 'select', optionsKey: KEYS.workstationStatus },
-        { key: 'hardwareNotes', label: 'Hardware Notes', kind: 'textarea', full: true },
-        { key: 'software', label: 'Software', kind: 'textarea', full: true },
-        { key: 'printerAccess', label: 'Printer Access' },
-        { key: 'peripheralsDock', label: 'Peripherals/Dock' },
-        { key: 'issuesReported', label: 'Issues Reported', kind: 'textarea', full: true },
-        { key: 'recommendations', label: 'Recommendations', kind: 'textarea', full: true },
         attention,
+        { key: 'email', label: 'Email', more: true },
+        { key: 'phone', label: 'Phone', more: true },
+        { key: 'operatingSystem', label: 'OS', more: true },
+        { key: 'monitors', label: 'Monitors', more: true },
+        { key: 'hardwareNotes', label: 'Hardware Notes', kind: 'textarea', full: true, more: true },
+        { key: 'software', label: 'Software', kind: 'textarea', full: true, more: true },
+        { key: 'printerAccess', label: 'Printer Access', more: true },
+        { key: 'peripheralsDock', label: 'Peripherals/Dock', more: true },
+        { key: 'issuesReported', label: 'Issues Reported', kind: 'textarea', full: true, more: true },
+        { key: 'recommendations', label: 'Recommendations', kind: 'textarea', full: true, more: true },
       ]}
     />
   )
@@ -55,8 +55,8 @@ export function Network() {
         { key: 'state', label: 'State', kind: 'select', optionsKey: KEYS.networkState },
         { key: 'priority', label: 'Priority', kind: 'select', optionsKey: KEYS.networkPriority },
         { key: 'status', label: 'Status', kind: 'select', optionsKey: KEYS.networkStatus },
-        { key: 'details', label: 'Details', kind: 'textarea', full: true },
         attention,
+        { key: 'details', label: 'Details', kind: 'textarea', full: true, more: true },
       ]}
     />
   )
@@ -78,9 +78,9 @@ export function Servers() {
         { key: 'category', label: 'Category', kind: 'select', optionsKey: KEYS.serverCategory },
         { key: 'direction', label: 'Direction', kind: 'select', optionsKey: KEYS.serverDirection },
         { key: 'status', label: 'Status', kind: 'select', optionsKey: KEYS.serverStatus },
-        { key: 'currentState', label: 'Current State', kind: 'textarea', full: true },
-        { key: 'riskRecommendation', label: 'Risk / Recommendation', kind: 'textarea', full: true },
         attention,
+        { key: 'currentState', label: 'Current State', kind: 'textarea', full: true, more: true },
+        { key: 'riskRecommendation', label: 'Risk / Recommendation', kind: 'textarea', full: true, more: true },
       ]}
     />
   )
@@ -101,9 +101,9 @@ export function Security() {
         { key: 'deviceName', label: 'Device Name' },
         { key: 'category', label: 'Category', kind: 'select', optionsKey: KEYS.securityCategory },
         { key: 'status', label: 'Status', kind: 'select', optionsKey: KEYS.securityStatus },
-        { key: 'currentState', label: 'Current State', kind: 'textarea', full: true },
-        { key: 'recommendation', label: 'Recommendation', kind: 'textarea', full: true },
         attention,
+        { key: 'currentState', label: 'Current State', kind: 'textarea', full: true, more: true },
+        { key: 'recommendation', label: 'Recommendation', kind: 'textarea', full: true, more: true },
       ]}
     />
   )
@@ -124,10 +124,10 @@ export function Software() {
         { key: 'softwareAccount', label: 'Software / Account' },
         { key: 'accountOwner', label: 'Account / Owner' },
         { key: 'status', label: 'Status', kind: 'select', optionsKey: KEYS.softwareStatus },
-        { key: 'currentState', label: 'Current State', kind: 'textarea', full: true },
-        { key: 'recommendedDirection', label: 'Recommended Direction', kind: 'textarea', full: true },
-        { key: 'actionItem', label: 'Action Item', kind: 'textarea', full: true },
         attention,
+        { key: 'currentState', label: 'Current State', kind: 'textarea', full: true, more: true },
+        { key: 'recommendedDirection', label: 'Recommended Direction', kind: 'textarea', full: true, more: true },
+        { key: 'actionItem', label: 'Action Item', kind: 'textarea', full: true, more: true },
       ]}
     />
   )

@@ -1,5 +1,24 @@
 const API = import.meta.env.VITE_API_URL ?? ''
 
+export class AuthExpiredError extends Error {
+  constructor() {
+    super('Session expired. Sign in, then Retry.')
+    this.name = 'AuthExpiredError'
+  }
+}
+
+type ExpiredHandler = () => void
+let expiredHandler: ExpiredHandler | null = null
+
+export function setAuthExpiredHandler(handler: ExpiredHandler | null) {
+  expiredHandler = handler
+}
+
+function notifyExpired() {
+  localStorage.removeItem('bis.token')
+  expiredHandler?.()
+}
+
 function token() {
   return localStorage.getItem('bis.token')
 }
@@ -23,10 +42,10 @@ async function request<T>(path: string, init: RequestInit = {}, attempt = 0): Pr
     throw new Error('Network error. Check Wi-Fi and try again.')
   }
   if (res.status === 401) {
-    localStorage.removeItem('bis.token')
-    if (!path.startsWith('/api/auth/login'))
-      window.location.href = '/login'
-    throw new Error('Unauthorized')
+    if (path.startsWith('/api/auth/login'))
+      throw new Error('Invalid email or password.')
+    notifyExpired()
+    throw new AuthExpiredError()
   }
   if (!res.ok) {
     let message = `${res.status} ${res.statusText}`
@@ -93,6 +112,10 @@ export const api = {
     const res = await fetch(api.contactsCsvUrl(id), {
       headers: { Authorization: `Bearer ${token()}` },
     })
+    if (res.status === 401) {
+      notifyExpired()
+      throw new AuthExpiredError()
+    }
     if (!res.ok) throw new Error('Export failed')
     const blob = await res.blob()
     const url = URL.createObjectURL(blob)

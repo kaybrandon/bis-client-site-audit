@@ -12,6 +12,7 @@ export type FieldDef = {
   kind?: 'text' | 'textarea' | 'select' | 'number' | 'check'
   optionsKey?: string
   full?: boolean
+  more?: boolean
 }
 
 export function ItemSection({
@@ -78,6 +79,9 @@ export function ItemSection({
     await reloadAudit()
   }
 
+  const primary = fields.filter((f) => !f.more)
+  const extra = fields.filter((f) => f.more)
+
   return (
     <>
       <div className="toolbar">
@@ -126,32 +130,57 @@ export function ItemSection({
       ))}
       {draft && (
         <Modal title={title} busy={saving} error={error} onSave={() => void save()} onClose={() => { setDraft(null); setError(null) }}>
-          <div className="form-grid">
-            {fields.map((f) => (
-              <Field key={f.key} label={f.kind === 'check' ? '' : f.label} full={f.full} check={f.kind === 'check'}>
-                {f.kind === 'textarea' ? (
-                  <textarea value={String(draft[f.key] ?? '')} onChange={(e) => setDraft({ ...draft, [f.key]: e.target.value })} />
-                ) : f.kind === 'select' ? (
-                  <select value={String(draft[f.key] ?? '')} onChange={(e) => setDraft({ ...draft, [f.key]: e.target.value })}>
-                    <option value="">Select…</option>
-                    {(options[f.optionsKey!] || []).map((o) => <option key={o}>{o}</option>)}
-                  </select>
-                ) : f.kind === 'number' ? (
-                  <input type="number" value={draft[f.key] === undefined || draft[f.key] === null ? '' : String(draft[f.key])}
-                    onChange={(e) => setDraft({ ...draft, [f.key]: e.target.value === '' ? null : Number(e.target.value) })} />
-                ) : f.kind === 'check' ? (
-                  <>
-                    <input type="checkbox" checked={Boolean(draft[f.key])} onChange={(e) => setDraft({ ...draft, [f.key]: e.target.checked })} />
-                    {' '}{f.label}
-                  </>
-                ) : (
-                  <input value={String(draft[f.key] ?? '')} onChange={(e) => setDraft({ ...draft, [f.key]: e.target.value })} />
-                )}
-              </Field>
-            ))}
-          </div>
+          {renderFieldGrid(primary, draft, setDraft, options)}
+          {extra.length > 0 && (
+            <details className="more-fields" open={extraHasValues(extra, draft)}>
+              <summary>More fields</summary>
+              {renderFieldGrid(extra, draft, setDraft, options)}
+            </details>
+          )}
         </Modal>
       )}
     </>
+  )
+}
+
+function extraHasValues(fields: FieldDef[], draft: Record<string, unknown>) {
+  return fields.some((f) => {
+    const v = draft[f.key]
+    if (v === undefined || v === null || v === '' || v === false) return false
+    return true
+  })
+}
+
+function renderFieldGrid(
+  fields: FieldDef[],
+  draft: Record<string, unknown>,
+  setDraft: (next: Record<string, unknown>) => void,
+  options: Record<string, string[]>,
+) {
+  return (
+    <div className="form-grid">
+      {fields.map((f) => (
+        <Field key={f.key} label={f.kind === 'check' ? '' : f.label} full={f.full} check={f.kind === 'check'}>
+          {f.kind === 'textarea' ? (
+            <textarea value={String(draft[f.key] ?? '')} onChange={(e) => setDraft({ ...draft, [f.key]: e.target.value })} />
+          ) : f.kind === 'select' ? (
+            <select value={String(draft[f.key] ?? '')} onChange={(e) => setDraft({ ...draft, [f.key]: e.target.value })}>
+              <option value="">Select…</option>
+              {(options[f.optionsKey!] || []).map((o) => <option key={o}>{o}</option>)}
+            </select>
+          ) : f.kind === 'number' ? (
+            <input type="number" value={draft[f.key] === undefined || draft[f.key] === null ? '' : String(draft[f.key])}
+              onChange={(e) => setDraft({ ...draft, [f.key]: e.target.value === '' ? null : Number(e.target.value) })} />
+          ) : f.kind === 'check' ? (
+            <>
+              <input type="checkbox" checked={Boolean(draft[f.key])} onChange={(e) => setDraft({ ...draft, [f.key]: e.target.checked })} />
+              {' '}{f.label}
+            </>
+          ) : (
+            <input value={String(draft[f.key] ?? '')} onChange={(e) => setDraft({ ...draft, [f.key]: e.target.value })} />
+          )}
+        </Field>
+      ))}
+    </div>
   )
 }

@@ -6,6 +6,7 @@ import { Login } from './pages/Login'
 import { Dashboard } from './pages/Dashboard'
 import { Settings } from './pages/Settings'
 import { Reports, ReportPrint } from './pages/Reports'
+import { SessionResume } from './components/SessionResume'
 import { Overview } from './pages/Overview'
 import { Workstations, Network, Servers, Security, Software, Issues, Purchases, Photos } from './pages/Sections'
 
@@ -17,6 +18,8 @@ function Guard({ children }: { children: ReactNode }) {
 
 export default function App() {
   return (
+    <>
+    <SessionResume />
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/" element={<Guard><Dashboard /></Guard>} />
@@ -36,5 +39,6 @@ export default function App() {
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   )
 }

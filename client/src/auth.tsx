@@ -1,8 +1,9 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
-import { api } from './api'
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { api, setAuthExpiredHandler } from './api'
 
 type AuthState = {
   email: string | null
+  expired: boolean
   ready: boolean
   login: (email: string, password: string) => Promise<void>
   logout: () => void
@@ -15,22 +16,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const t = localStorage.getItem('bis.token')
     return t ? localStorage.getItem('bis.email') : null
   })
+  const [expired, setExpired] = useState(false)
+
+  useEffect(() => {
+    setAuthExpiredHandler(() => setExpired(true))
+    return () => setAuthExpiredHandler(null)
+  }, [])
 
   const value = useMemo<AuthState>(() => ({
     email,
+    expired,
     ready: true,
     login: async (e, p) => {
       const result = await api.login(e, p)
       localStorage.setItem('bis.token', result.token)
       localStorage.setItem('bis.email', result.email)
       setEmail(result.email)
+      setExpired(false)
     },
     logout: () => {
       localStorage.removeItem('bis.token')
       localStorage.removeItem('bis.email')
       setEmail(null)
+      setExpired(false)
     },
-  }), [email])
+  }), [email, expired])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

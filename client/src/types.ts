@@ -136,3 +136,16 @@ export function sectionCue(section?: SectionProgress): { text: string; kind: 'na
   if (section?.complete) return { text: '✓', kind: 'done' }
   return { text: '○', kind: 'todo' }
 }
+
+/** First incomplete section after `current` (wraps). Skips the current slug. */
+export function nextIncompleteSection(sections: SectionProgress[] | undefined, current: string) {
+  const incomplete = SECTIONS.filter((s) => {
+    const progress = sections?.find((p) => p.key === s.slug)
+    return !progress?.complete
+  })
+  if (!incomplete.length) return null
+  const idx = SECTIONS.findIndex((s) => s.slug === current)
+  return incomplete.find((s) => SECTIONS.findIndex((x) => x.slug === s.slug) > idx)
+    ?? incomplete.find((s) => s.slug !== current)
+    ?? null
+}

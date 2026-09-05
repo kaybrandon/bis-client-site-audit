@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { useOutletContext, useParams } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { useBlocker, useOutletContext, useParams } from 'react-router-dom'
 import { api } from '../api'
 import { Field } from '../components/Modal'
 import { PhotoPicker } from '../components/PhotoPicker'
@@ -19,6 +19,7 @@ export function Overview() {
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const baseline = useRef('')
 
   useEffect(() => {
     void api.dropdown(KEYS.auditIndustry).then(setIndustries)
@@ -28,15 +29,31 @@ export function Overview() {
   useEffect(() => {
     if (!audit) return
     if (error || saving) return
-    const contacts = (['Primary', 'Technical', 'Billing'] as ContactRole[]).map(
-      (role) => audit.contacts.find((c) => c.role === role) || emptyContact(role, id),
-    )
-    setForm({
-      ...audit,
-      contacts,
-      subLocations: audit.subLocations.length ? audit.subLocations : [{ id: crypto.randomUUID(), auditId: id, name: '' }],
-    })
+    if (baseline.current && form && snapshotOverview(form) !== baseline.current) return
+    const next = hydrateOverview(audit, id)
+    setForm(next)
+    baseline.current = snapshotOverview(next)
   }, [audit, id, error, saving])
+
+  const dirty = !!form && !!baseline.current && snapshotOverview(form) !== baseline.current
+  const blocker = useBlocker(dirty)
+
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!dirty) return
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [dirty])
+
+  useEffect(() => {
+    if (blocker.state !== 'blocked') return
+    const leave = window.confirm('You have unsaved Overview changes. Leave anyway?')
+    if (leave) blocker.proceed()
+    else blocker.reset()
+  }, [blocker])
 
   if (!form) return <p>Loading…</p>
 
@@ -50,6 +67,7 @@ export function Overview() {
     setError(null)
     try {
       await api.saveOverview(id, form)
+      baseline.current = snapshotOverview(form)
       setMessage('Saved.')
       reload()
     } catch (e) {
@@ -65,7 +83,7 @@ export function Overview() {
       <div className="toolbar">
         <div>
           <h2>Overview</h2>
-          <p className="count">Client profile, contacts, and engagement scope.</p>
+          <p className="count">Client profile, contacts, and engagement scope.{dirty ? ' · Unsaved changes' : ''}</p>
         </div>
         <div className="toolbar-actions">
           <button type="button" className="btn btn-primary" disabled={saving} onClick={() => void save()}>
@@ -96,6 +114,7 @@ export function Overview() {
                 const next = { ...form, clientPhotoPath: photo.relativePath }
                 setForm(next)
                 await api.saveOverview(id, next)
+                baseline.current = snapshotOverview(next)
                 reload()
               }}
             />
@@ -161,4 +180,33 @@ export function Overview() {
       </div>
     </>
   )
+}
+
+function hydrateOverview(audit: AuditDetail, id: string): AuditDetail {
+  const contacts = (['Primary', 'Technical', 'Billing'] as ContactRole[]).map(
+    (role) => audit.contacts.find((c) => c.role === role) || emptyContact(role, id),
+  )
+  return {
+    ...audit,
+    contacts,
+    subLocations: audit.subLocations.length ? audit.subLocations : [{ id: crypto.randomUUID(), auditId: id, name: '' }],
+  }
+}
+
+function snapshotOverview(form: AuditDetail) {
+  return JSON.stringify({
+    companyName: form.companyName,
+    industry: form.industry,
+    employeeCount: form.employeeCount ?? null,
+    status: form.status,
+    address: form.address ?? '',
+    preparedBy: form.preparedBy ?? '',
+    auditDate: form.auditDate?.slice(0, 10) ?? '',
+    previousItSupport: form.previousItSupport ?? '',
+    auditScope: form.auditScope ?? '',
+    executiveSummary: form.executiveSummary ?? '',
+    clientPhotoPath: form.clientPhotoPath ?? '',
+    contacts: form.contacts.map((c) => ({ role: c.role, name: c.name ?? '', title: c.title ?? '', email: c.email ?? '', phone: c.phone ?? '' })),
+    subLocations: form.subLocations.map((l) => ({ name: l.name, address: l.address ?? '', notes: l.notes ?? '' })),
+  })
 }
