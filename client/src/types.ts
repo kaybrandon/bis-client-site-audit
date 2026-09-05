@@ -45,6 +45,8 @@ export interface SectionProgress {
   name: string
   weight: number
   score: number
+  needsAttentionCount: number
+  complete: boolean
 }
 
 export interface AuditSummary {
@@ -117,13 +119,20 @@ export const KEYS = {
 }
 
 export const SECTIONS = [
-  { num: '01', slug: 'overview', title: 'Overview' },
-  { num: '02', slug: 'workstations', title: 'Team & Workstations' },
-  { num: '03', slug: 'network', title: 'Network & Infrastructure' },
-  { num: '04', slug: 'servers', title: 'Servers, Storage & Cloud' },
-  { num: '05', slug: 'security', title: 'Security, Cameras & AV' },
-  { num: '06', slug: 'software', title: 'Software & Licensing' },
-  { num: '07', slug: 'issues', title: 'Issues & Recommendations' },
-  { num: '08', slug: 'purchases', title: 'Purchase Tracker' },
-  { num: '09', slug: 'photos', title: 'Site Photos' },
+  { num: '01', slug: 'overview', title: 'Overview', short: 'Overview' },
+  { num: '02', slug: 'workstations', title: 'Team & Workstations', short: 'WS' },
+  { num: '03', slug: 'network', title: 'Network & Infrastructure', short: 'Net' },
+  { num: '04', slug: 'servers', title: 'Servers, Storage & Cloud', short: 'Servers' },
+  { num: '05', slug: 'security', title: 'Security, Cameras & AV', short: 'Security' },
+  { num: '06', slug: 'software', title: 'Software & Licensing', short: 'Software' },
+  { num: '07', slug: 'issues', title: 'Issues & Recommendations', short: 'Issues' },
+  { num: '08', slug: 'purchases', title: 'Purchase Tracker', short: 'Purchases' },
+  { num: '09', slug: 'photos', title: 'Site Photos', short: 'Photos' },
 ] as const
+
+export function sectionCue(section?: SectionProgress): { text: string; kind: 'na' | 'done' | 'todo' } {
+  const na = section?.needsAttentionCount ?? 0
+  if (na > 0) return { text: `${na}⚠`, kind: 'na' }
+  if (section?.complete) return { text: '✓', kind: 'done' }
+  return { text: '○', kind: 'todo' }
+}

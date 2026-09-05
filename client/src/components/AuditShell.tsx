@@ -1,16 +1,22 @@
 import { Link, NavLink, Outlet, useParams } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { api } from '../api'
-import { SECTIONS, type AuditDetail } from '../types'
+import { SECTIONS, sectionCue, type AuditDetail } from '../types'
+
+export type AuditOutlet = { audit: AuditDetail | null; reload: () => Promise<void> }
 
 export function AuditShell() {
   const { id } = useParams()
   const [audit, setAudit] = useState<AuditDetail | null>(null)
 
-  useEffect(() => {
+  const reload = useCallback(async () => {
     if (!id) return
-    void api.audit(id).then(setAudit)
+    setAudit(await api.audit(id))
   }, [id])
+
+  useEffect(() => {
+    void reload()
+  }, [reload])
 
   return (
     <div className="page-shell">
@@ -37,16 +43,27 @@ export function AuditShell() {
       <div className="audit-shell">
         <aside className="audit-side no-print">
           <nav className="audit-nav" aria-label="Audit sections">
-            {SECTIONS.map((s) => (
-              <NavLink key={s.slug} to={`/audits/${id}/${s.slug}`} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                <span className="num">{s.num}</span>
-                <span>{s.title}</span>
-              </NavLink>
-            ))}
+            {SECTIONS.map((s) => {
+              const progress = audit?.sections.find((p) => p.key === s.slug)
+              const cue = sectionCue(progress)
+              return (
+                <NavLink
+                  key={s.slug}
+                  to={`/audits/${id}/${s.slug}`}
+                  title={s.title}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''} cue-${cue.kind}`}
+                >
+                  <span className="num">{s.num}</span>
+                  <span className="nav-short">{s.short}</span>
+                  {cue.kind === 'na' ? <span className="nav-dot">·</span> : null}
+                  <span className={`nav-cue cue-${cue.kind}`}>{cue.text}</span>
+                </NavLink>
+              )
+            })}
           </nav>
         </aside>
         <main className="audit-main">
-          <Outlet context={{ audit, reload: () => id && api.audit(id).then(setAudit) }} />
+          <Outlet context={{ audit, reload } satisfies AuditOutlet} />
         </main>
       </div>
     </div>

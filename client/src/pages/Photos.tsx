@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useOutletContext, useParams } from 'react-router-dom'
 import { api } from '../api'
+import type { AuditOutlet } from '../components/AuditShell'
 import { PhotoPicker } from '../components/PhotoPicker'
 import { KEYS, type SitePhoto } from '../types'
 
 export function Photos() {
   const { id = '' } = useParams()
+  const { reload } = useOutletContext<AuditOutlet>()
   const [items, setItems] = useState<SitePhoto[]>([])
   const [categories, setCategories] = useState<string[]>([])
   const [filter, setFilter] = useState('')
@@ -55,6 +57,7 @@ export function Photos() {
           upload={async (file, caption) => {
             await api.uploadPhoto(id, file, { category: uploadCategory, ownerType: 'Audit', caption })
             await load()
+            await reload()
           }}
         />
       </div>
@@ -70,7 +73,7 @@ export function Photos() {
                 {photo.fileName}
                 <div className="photo-tile-actions">
                   <button type="button" className="btn btn-danger" onClick={() => {
-                    if (confirm('Delete this photo?')) void api.deletePhoto(photo.id).then(load)
+                    if (confirm('Delete this photo?')) void api.deletePhoto(photo.id).then(() => { void load(); void reload() })
                   }}>Delete</button>
                 </div>
               </figcaption>

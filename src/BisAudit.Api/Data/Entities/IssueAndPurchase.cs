@@ -14,7 +14,6 @@ public class IssueItem : IAuditOwned
     public decimal? MonthlyCostImpact { get; set; }
     public string? ImpactBasis { get; set; }
     public DateTime? LastAudited { get; set; }
-    public bool NeedsAttention { get; set; }
     public ClientAudit? Audit { get; set; }
 
     public string DisplayTitle => string.IsNullOrWhiteSpace(IssueRecommendation) ? "Issue" : IssueRecommendation;
@@ -35,7 +34,6 @@ public class PurchaseItem : IAuditOwned
     public string? SavingsBasis { get; set; }
     public string Status { get; set; } = "To Quote";
     public DateTime? LastAudited { get; set; }
-    public bool NeedsAttention { get; set; }
     public ClientAudit? Audit { get; set; }
 
     public string DisplayTitle => string.IsNullOrWhiteSpace(Item) ? "Purchase item" : Item;

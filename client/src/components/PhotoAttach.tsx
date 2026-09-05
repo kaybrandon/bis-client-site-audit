@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
+import { useOutletContext } from 'react-router-dom'
 import { api } from '../api'
 import type { SitePhoto } from '../types'
+import type { AuditOutlet } from './AuditShell'
 import { PhotoPicker } from './PhotoPicker'
 
 export function PhotoAttach({
@@ -11,6 +13,7 @@ export function PhotoAttach({
   ownerType: string
   category: string
 }) {
+  const { reload } = useOutletContext<AuditOutlet>()
   const [items, setItems] = useState<SitePhoto[]>([])
   const [open, setOpen] = useState(false)
 
@@ -32,6 +35,7 @@ export function PhotoAttach({
           await api.uploadPhoto(auditId, file, { category, ownerType, ownerId })
           setOpen(true)
           await load()
+          await reload()
         }}
       />
       <button type="button" className="btn btn-ghost-dark" onClick={() => setOpen((v) => !v)}>
@@ -45,7 +49,7 @@ export function PhotoAttach({
               <img src={api.photoSrc(p.publicUrl || p.relativePath)} alt={p.caption || p.fileName} />
               <figcaption>
                 {p.fileName}
-                <button type="button" className="btn btn-danger" onClick={() => void api.deletePhoto(p.id).then(load)}>
+                <button type="button" className="btn btn-danger" onClick={() => void api.deletePhoto(p.id).then(() => { void load(); void reload() })}>
                   Delete
                 </button>
               </figcaption>

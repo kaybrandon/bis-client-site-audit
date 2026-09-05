@@ -115,7 +115,17 @@ h1, h2, h3 { letter-spacing: -0.02em; }
     padding: 12px 14px; border-radius: 10px; color: var(--text); text-decoration: none; margin-bottom: 4px;
     min-height: 44px;
 }
-.nav-item .num { font-size: 0.75rem; color: var(--muted); width: 22px; }
+.nav-item .num { font-size: 0.75rem; color: var(--muted); width: 22px; flex-shrink: 0; }
+.nav-short { font-weight: 650; }
+.nav-dot { opacity: 0.7; }
+.nav-cue { font-weight: 700; letter-spacing: 0.01em; }
+.nav-cue.cue-na { color: #ca8a04; }
+.nav-cue.cue-done { color: #166534; }
+.nav-cue.cue-todo { color: var(--muted); }
+.nav-item.active .nav-cue.cue-na { color: #fde68a; }
+.nav-item.active .nav-cue.cue-done { color: #bbf7d0; }
+.nav-item.active .nav-cue.cue-todo { color: #c5d4ea; }
+.toolbar-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .nav-item.active, .nav-item:hover { background: var(--navy); color: #fff; }
 .nav-item.active .num, .nav-item:hover .num { color: #c5d4ea; }
 .audit-main { padding: 24px 28px 48px; }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useOutletContext, useParams } from 'react-router-dom'
 import { api } from '../api'
+import type { AuditOutlet } from '../components/AuditShell'
 import { Modal, Field } from '../components/Modal'
 import { PhotoAttach } from '../components/PhotoAttach'
 import { StatusBadge } from '../components/StatusBadge'
@@ -29,6 +30,8 @@ export function ItemSection({
   extraFilters?: { severity?: boolean; status?: boolean }
 }) {
   const { id = '' } = useParams()
+  const { reload: reloadAudit } = useOutletContext<AuditOutlet>()
+  const usesNa = fields.some((f) => f.key === 'needsAttention')
   const [items, setItems] = useState<Record<string, unknown>[]>([])
   const [draft, setDraft] = useState<Record<string, unknown> | null>(null)
   const [options, setOptions] = useState<Record<string, string[]>>({})
@@ -60,6 +63,7 @@ export function ItemSection({
       await api.saveItem(id, section, draft)
       setDraft(null)
       await load()
+      await reloadAudit()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Save failed. Check Wi-Fi and try again.')
     } finally {
@@ -71,6 +75,7 @@ export function ItemSection({
     if (!confirm('Delete this item?')) return
     await api.deleteItem(id, section, itemId)
     await load()
+    await reloadAudit()
   }
 
   return (
@@ -99,12 +104,12 @@ export function ItemSection({
       {error && !draft && <p className="error">{error}</p>}
       {filtered.length === 0 && <div className="empty">No items match the current filter.</div>}
       {filtered.map((item) => (
-        <article className={`item-card ${item.needsAttention ? 'needs-attention' : ''}`} key={String(item.id)}>
+        <article className={`item-card ${usesNa && item.needsAttention ? 'needs-attention' : ''}`} key={String(item.id)}>
           <div>
             <div className="item-title">
               <h3>{titleOf(item)}</h3>
               {(badgesOf?.(item) || []).map((b) => b && <StatusBadge key={b} value={b} />)}
-              {item.needsAttention ? <span className="warn" title="Needs attention">⚠</span> : null}
+              {usesNa && item.needsAttention ? <span className="warn" title="Needs attention">⚠</span> : null}
               <div className="item-title-actions">
                 <button type="button" className="btn btn-ghost-dark" onClick={() => { setError(null); setDraft({ ...item }) }}>Edit</button>
                 <button type="button" className="btn btn-danger" onClick={() => void remove(String(item.id))}>Delete</button>

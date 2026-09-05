@@ -337,8 +337,7 @@ public class AuditService(IDbContextFactory<ApplicationDbContext> factory, Photo
     {
         Id = Guid.NewGuid(), AuditId = auditId, Category = s.Category, IssueRecommendation = s.IssueRecommendation,
         Severity = s.Severity, PriorityRank = s.PriorityRank, Owner = s.Owner, Status = s.Status, Notes = s.Notes,
-        MonthlyCostImpact = s.MonthlyCostImpact, ImpactBasis = s.ImpactBasis, LastAudited = s.LastAudited,
-        NeedsAttention = s.NeedsAttention
+        MonthlyCostImpact = s.MonthlyCostImpact, ImpactBasis = s.ImpactBasis, LastAudited = s.LastAudited
     };
 
     private static PurchaseItem ClonePurchase(PurchaseItem s, Guid auditId) => new()
@@ -346,7 +345,7 @@ public class AuditService(IDbContextFactory<ApplicationDbContext> factory, Photo
         Id = Guid.NewGuid(), AuditId = auditId, Item = s.Item, Category = s.Category, Rationale = s.Rationale,
         Priority = s.Priority, Quantity = s.Quantity, EstimatedUnitCost = s.EstimatedUnitCost,
         MonthlySavings = s.MonthlySavings, SavingsBasis = s.SavingsBasis, Status = s.Status,
-        LastAudited = s.LastAudited, NeedsAttention = s.NeedsAttention
+        LastAudited = s.LastAudited
     };
 
     public static string OwnerTypeFor<T>() => typeof(T).Name switch

@@ -3,9 +3,8 @@ import { useOutletContext, useParams } from 'react-router-dom'
 import { api } from '../api'
 import { Field } from '../components/Modal'
 import { PhotoPicker } from '../components/PhotoPicker'
+import type { AuditOutlet } from '../components/AuditShell'
 import { KEYS, type AuditContact, type AuditDetail, type ContactRole, type SubLocation } from '../types'
-
-type Ctx = { audit: AuditDetail | null; reload: () => void }
 
 const emptyContact = (role: ContactRole, auditId: string): AuditContact => ({
   id: crypto.randomUUID(), auditId, role,
@@ -13,7 +12,7 @@ const emptyContact = (role: ContactRole, auditId: string): AuditContact => ({
 
 export function Overview() {
   const { id = '' } = useParams()
-  const { audit, reload } = useOutletContext<Ctx>()
+  const { audit, reload } = useOutletContext<AuditOutlet>()
   const [form, setForm] = useState<AuditDetail | null>(null)
   const [industries, setIndustries] = useState<string[]>([])
   const [statuses, setStatuses] = useState<string[]>([])
@@ -28,6 +27,7 @@ export function Overview() {
 
   useEffect(() => {
     if (!audit) return
+    if (error || saving) return
     const contacts = (['Primary', 'Technical', 'Billing'] as ContactRole[]).map(
       (role) => audit.contacts.find((c) => c.role === role) || emptyContact(role, id),
     )
@@ -36,7 +36,7 @@ export function Overview() {
       contacts,
       subLocations: audit.subLocations.length ? audit.subLocations : [{ id: crypto.randomUUID(), auditId: id, name: '' }],
     })
-  }, [audit, id])
+  }, [audit, id, error, saving])
 
   if (!form) return <p>Loading…</p>
 
@@ -67,9 +67,16 @@ export function Overview() {
           <h2>Overview</h2>
           <p className="count">Client profile, contacts, and engagement scope.</p>
         </div>
-        <button type="button" className="btn btn-primary" disabled={saving} onClick={() => void save()}>
-          {saving ? 'Saving…' : 'Save'}
-        </button>
+        <div className="toolbar-actions">
+          <button type="button" className="btn btn-primary" disabled={saving} onClick={() => void save()}>
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+          {error && (
+            <button type="button" className="btn btn-primary" disabled={saving} onClick={() => void save()}>
+              Retry
+            </button>
+          )}
+        </div>
       </div>
       {message && <p className="muted">{message}</p>}
       {error && <p className="error">{error}</p>}

@@ -140,7 +140,7 @@ export function Issues() {
       section="issues"
       ownerType="Issue"
       photoCategory="General"
-      defaults={{ status: 'Open', severity: 'Medium', priorityRank: 3, needsAttention: true }}
+      defaults={{ status: 'Open', severity: 'Medium', priorityRank: 3 }}
       titleOf={(i) => String(i.issueRecommendation || 'Issue')}
       detailOf={(i) => String(i.notes || '') || undefined}
       badgesOf={(i) => [String(i.severity), String(i.status)]}
@@ -155,7 +155,6 @@ export function Issues() {
         { key: 'monthlyCostImpact', label: 'Monthly Cost Impact $', kind: 'number' },
         { key: 'impactBasis', label: 'Impact Basis' },
         { key: 'notes', label: 'Notes', kind: 'textarea', full: true },
-        attention,
       ]}
     />
   )
@@ -182,7 +181,6 @@ export function Purchases() {
         { key: 'savingsBasis', label: 'Savings Basis' },
         { key: 'status', label: 'Status', kind: 'select', optionsKey: KEYS.purchaseStatus },
         { key: 'rationale', label: 'Rationale', kind: 'textarea', full: true },
-        attention,
       ]}
     />
   )

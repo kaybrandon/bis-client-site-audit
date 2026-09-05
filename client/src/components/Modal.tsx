@@ -22,7 +22,14 @@ export function Modal({
         {error && <p className="error modal-error">{error}</p>}
         <footer>
           <button type="button" className="btn btn-ghost-dark" disabled={busy} onClick={onClose}>Cancel</button>
-          <button type="button" className="btn btn-primary" disabled={busy} onClick={onSave}>{busy ? 'Saving…' : saveLabel}</button>
+          {error && (
+            <button type="button" className="btn btn-primary" disabled={busy} onClick={onSave}>
+              {busy ? 'Saving…' : 'Retry'}
+            </button>
+          )}
+          <button type="button" className="btn btn-primary" disabled={busy} onClick={onSave}>
+            {busy ? 'Saving…' : saveLabel}
+          </button>
         </footer>
       </div>
     </div>

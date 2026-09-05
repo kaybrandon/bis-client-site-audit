@@ -2,7 +2,13 @@ using BisAudit.Api.Data.Entities;
 
 namespace BisAudit.Api.Services;
 
-public record SectionProgress(string Key, string Name, int Weight, double Score);
+public record SectionProgress(
+    string Key,
+    string Name,
+    int Weight,
+    double Score,
+    int NeedsAttentionCount,
+    bool Complete);
 
 public record AuditProgress(int Percent, IReadOnlyList<SectionProgress> Sections)
 {
@@ -33,17 +39,18 @@ public static class ProgressCalculator
 
     public static AuditProgress Calculate(ClientAudit audit)
     {
+        var overview = OverviewScore(audit);
         var sections = new List<SectionProgress>
         {
-            new("overview", "Overview", 20, OverviewScore(audit)),
-            new("workstations", "Team & Workstations", 12, CollectionScore(audit.Workstations)),
-            new("network", "Network & Infrastructure", 12, CollectionScore(audit.NetworkItems)),
-            new("servers", "Servers, Storage & Cloud", 12, CollectionScore(audit.ServerStorageItems)),
-            new("security", "Security, Cameras & AV", 10, CollectionScore(audit.SecurityAvItems)),
-            new("software", "Software & Licensing", 8, CollectionScore(audit.SoftwareItems)),
-            new("issues", "Issues & Recommendations", 12, CollectionScore(audit.Issues)),
-            new("purchases", "Purchase Tracker", 8, CollectionScore(audit.Purchases)),
-            new("photos", "Site Photos", 6, audit.Photos.Count > 0 ? 1 : 0)
+            new("overview", "Overview", 20, overview, 0, overview >= 1),
+            Inventory("workstations", "Team & Workstations", 12, audit.Workstations),
+            Inventory("network", "Network & Infrastructure", 12, audit.NetworkItems),
+            Inventory("servers", "Servers, Storage & Cloud", 12, audit.ServerStorageItems),
+            Inventory("security", "Security, Cameras & AV", 10, audit.SecurityAvItems),
+            Inventory("software", "Software & Licensing", 8, audit.SoftwareItems),
+            new("issues", "Issues & Recommendations", 12, CollectionScore(audit.Issues), 0, audit.Issues.Count > 0),
+            new("purchases", "Purchase Tracker", 8, CollectionScore(audit.Purchases), 0, audit.Purchases.Count > 0),
+            new("photos", "Site Photos", 6, audit.Photos.Count > 0 ? 1 : 0, 0, audit.Photos.Count > 0)
         };
 
         var weighted = sections.Sum(s => s.Weight * s.Score);
@@ -80,4 +87,22 @@ public static class ProgressCalculator
     }
 
     private static double CollectionScore<T>(ICollection<T> items) => items.Count > 0 ? 1 : 0;
+
+    private static SectionProgress Inventory<T>(string key, string name, int weight, ICollection<T> items)
+        where T : class
+    {
+        var na = items.Count(AttentionOf);
+        return new(key, name, weight, CollectionScore(items), na, items.Count > 0);
+    }
+
+    private static bool AttentionOf(object item) =>
+        item switch
+        {
+            WorkstationItem w => w.NeedsAttention,
+            NetworkItem n => n.NeedsAttention,
+            ServerStorageItem s => s.NeedsAttention,
+            SecurityAvItem s => s.NeedsAttention,
+            SoftwareItem s => s.NeedsAttention,
+            _ => false
+        };
 }

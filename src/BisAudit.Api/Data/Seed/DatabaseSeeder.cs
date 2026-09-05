@@ -170,15 +170,15 @@ public static class DatabaseSeeder
         audit.Issues.AddRange(
         [
             Issue(id, "Network Security", "No managed perimeter firewall identified", "Critical", 1, "Open",
-                "Confirm circuit details and size a SonicWall appliance.", 420, "Estimated incident / downtime exposure", last, true),
+                "Confirm circuit details and size a SonicWall appliance.", 420, "Estimated incident / downtime exposure", last),
             Issue(id, "Hardware", "Ronnie’s Photoshop workstation reports disk errors", "High", 2, "Open",
-                "Run SMART and file-system diagnostics; protect current creative files.", 180, "Lost production hours", last, true),
+                "Run SMART and file-system diagnostics; protect current creative files.", 180, "Lost production hours", last),
             Issue(id, "Network Security", "Shared NVR is not isolated from business systems", "High", 3, "Planned",
-                "Move cameras and NVR to a dedicated VLAN.", 90, "Lateral-movement risk", last, true),
+                "Move cameras and NVR to a dedicated VLAN.", 90, "Lateral-movement risk", last),
             Issue(id, "Productivity", "Boardroom has no dedicated conferencing solution", "Medium", 4, "Pending Decision",
-                "Choose between Meeting Owl and Logitech options.", 60, "Wasted meeting time", last, true),
+                "Choose between Meeting Owl and Logitech options.", 60, "Wasted meeting time", last),
             Issue(id, "Cloud", "NAS usage numbers are unavailable", "High", 5, "Blocked",
-                "Capacity and growth data are required before final sizing.", 0, "Blocked on client data", last, true)
+                "Capacity and growth data are required before final sizing.", 0, "Blocked on client data", last)
         ]);
 
         audit.Purchases.AddRange(
@@ -189,7 +189,7 @@ public static class DatabaseSeeder
                 Category = "Network", Rationale = "Managed perimeter with VPN and content filtering.",
                 Priority = "Critical", Quantity = 1, EstimatedUnitCost = 1450, MonthlySavings = 350,
                 SavingsBasis = "Reduced incident risk vs. unmanaged gateway", Status = "To Quote",
-                LastAudited = last, NeedsAttention = true
+                LastAudited = last
             },
             new PurchaseItem
             {
@@ -197,7 +197,7 @@ public static class DatabaseSeeder
                 Category = "Workstation", Rationale = "Disk errors on production Photoshop workstation.",
                 Priority = "High", Quantity = 1, EstimatedUnitCost = 2800, MonthlySavings = 180,
                 SavingsBasis = "Recovered creative hours", Status = "Quoted",
-                LastAudited = last, NeedsAttention = true
+                LastAudited = last
             }
         ]);
 
@@ -253,7 +253,7 @@ public static class DatabaseSeeder
 
     private static IssueItem Issue(
         Guid auditId, string category, string title, string severity, int rank, string status,
-        string notes, decimal monthly, string basis, DateTime last, bool attention) => new()
+        string notes, decimal monthly, string basis, DateTime last) => new()
     {
         Id = Guid.NewGuid(),
         AuditId = auditId,
@@ -266,7 +266,6 @@ public static class DatabaseSeeder
         MonthlyCostImpact = monthly,
         ImpactBasis = basis,
         LastAudited = last,
-        NeedsAttention = attention,
         Owner = "BIS"
     };
 }
