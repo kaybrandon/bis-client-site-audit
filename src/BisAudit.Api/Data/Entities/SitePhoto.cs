@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace BisAudit.Api.Data.Entities;
 
 public static class PhotoOwnerTypes
@@ -23,6 +25,7 @@ public class SitePhoto
     public string OwnerType { get; set; } = PhotoOwnerTypes.Audit;
     public Guid? OwnerId { get; set; }
     public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
+    [JsonIgnore]
     public ClientAudit? Audit { get; set; }
 
     public string PublicUrl => "/" + RelativePath.Replace('\\', '/').TrimStart('/');

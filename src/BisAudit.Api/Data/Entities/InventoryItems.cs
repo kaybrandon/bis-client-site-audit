@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace BisAudit.Api.Data.Entities;
 
 public class WorkstationItem : IAuditOwned
@@ -22,6 +24,7 @@ public class WorkstationItem : IAuditOwned
     public string Status { get; set; } = "Current";
     public DateTime? LastAudited { get; set; }
     public bool NeedsAttention { get; set; }
+    [JsonIgnore]
     public ClientAudit? Audit { get; set; }
 
     public string DisplayTitle =>
@@ -42,6 +45,7 @@ public class NetworkItem : IAuditOwned
     public string Status { get; set; } = "Current";
     public DateTime? LastAudited { get; set; }
     public bool NeedsAttention { get; set; }
+    [JsonIgnore]
     public ClientAudit? Audit { get; set; }
 
     public string DisplayTitle => string.IsNullOrWhiteSpace(DeviceName) ? "Network item" : DeviceName;
@@ -60,6 +64,7 @@ public class ServerStorageItem : IAuditOwned
     public string Status { get; set; } = "Current";
     public DateTime? LastAudited { get; set; }
     public bool NeedsAttention { get; set; }
+    [JsonIgnore]
     public ClientAudit? Audit { get; set; }
 
     public string DisplayTitle => string.IsNullOrWhiteSpace(DeviceName) ? "Server / storage item" : DeviceName;
@@ -77,6 +82,7 @@ public class SecurityAvItem : IAuditOwned
     public string Status { get; set; } = "Current";
     public DateTime? LastAudited { get; set; }
     public bool NeedsAttention { get; set; }
+    [JsonIgnore]
     public ClientAudit? Audit { get; set; }
 
     public string DisplayTitle => string.IsNullOrWhiteSpace(DeviceName) ? "Security / AV item" : DeviceName;
@@ -95,6 +101,7 @@ public class SoftwareItem : IAuditOwned
     public string Status { get; set; } = "Current";
     public DateTime? LastAudited { get; set; }
     public bool NeedsAttention { get; set; }
+    [JsonIgnore]
     public ClientAudit? Audit { get; set; }
 
     public string DisplayTitle => string.IsNullOrWhiteSpace(SoftwareAccount) ? "Software / account" : SoftwareAccount;

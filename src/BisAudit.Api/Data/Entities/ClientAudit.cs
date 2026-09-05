@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace BisAudit.Api.Data.Entities;
 
 public class ClientAudit
@@ -28,9 +30,14 @@ public class ClientAudit
     public List<PurchaseItem> Purchases { get; set; } = [];
     public List<SitePhoto> Photos { get; set; } = [];
 
-    public AuditContact? PrimaryContact => Contacts.FirstOrDefault(c => c.Role == ContactRole.Primary);
-    public AuditContact? TechnicalContact => Contacts.FirstOrDefault(c => c.Role == ContactRole.Technical);
-    public AuditContact? BillingContact => Contacts.FirstOrDefault(c => c.Role == ContactRole.Billing);
+    [JsonIgnore]
+    public AuditContact? PrimaryContact => Contacts?.FirstOrDefault(c => c.Role == ContactRole.Primary);
+
+    [JsonIgnore]
+    public AuditContact? TechnicalContact => Contacts?.FirstOrDefault(c => c.Role == ContactRole.Technical);
+
+    [JsonIgnore]
+    public AuditContact? BillingContact => Contacts?.FirstOrDefault(c => c.Role == ContactRole.Billing);
 }
 
 public enum ContactRole
@@ -49,6 +56,8 @@ public class AuditContact
     public string? Title { get; set; }
     public string? Email { get; set; }
     public string? Phone { get; set; }
+
+    [JsonIgnore]
     public ClientAudit? Audit { get; set; }
 }
 
@@ -59,5 +68,7 @@ public class SubLocation
     public string Name { get; set; } = "";
     public string? Address { get; set; }
     public string? Notes { get; set; }
+
+    [JsonIgnore]
     public ClientAudit? Audit { get; set; }
 }

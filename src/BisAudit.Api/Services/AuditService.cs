@@ -1,5 +1,6 @@
 using BisAudit.Api.Data;
 using BisAudit.Api.Data.Entities;
+using BisAudit.Api.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace BisAudit.Api.Services;
@@ -73,16 +74,16 @@ public class AuditService(IDbContextFactory<ApplicationDbContext> factory, Photo
         return audit;
     }
 
-    public async Task SaveOverviewAsync(ClientAudit incoming, IEnumerable<SubLocation> locations, CancellationToken ct = default)
+    public async Task SaveOverviewAsync(Guid id, OverviewSaveRequest incoming, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
         var audit = await db.Audits
             .Include(a => a.Contacts)
             .Include(a => a.SubLocations)
-            .FirstOrDefaultAsync(a => a.Id == incoming.Id, ct)
+            .FirstOrDefaultAsync(a => a.Id == id, ct)
             ?? throw new InvalidOperationException("Audit not found.");
 
-        audit.CompanyName = incoming.CompanyName.Trim();
+        audit.CompanyName = (incoming.CompanyName ?? "").Trim();
         audit.Industry = incoming.Industry;
         audit.EmployeeCount = incoming.EmployeeCount;
         audit.Address = incoming.Address;
@@ -95,9 +96,11 @@ public class AuditService(IDbContextFactory<ApplicationDbContext> factory, Photo
         audit.ClientPhotoPath = incoming.ClientPhotoPath;
         audit.UpdatedAt = DateTime.UtcNow;
 
+        var incomingContacts = incoming.Contacts ?? [];
+        audit.Contacts ??= [];
         foreach (var role in Enum.GetValues<ContactRole>())
         {
-            var src = incoming.Contacts.FirstOrDefault(c => c.Role == role);
+            var src = incomingContacts.FirstOrDefault(c => c.Role == role);
             var dest = audit.Contacts.FirstOrDefault(c => c.Role == role);
             if (dest is null)
             {
@@ -110,8 +113,9 @@ public class AuditService(IDbContextFactory<ApplicationDbContext> factory, Photo
             dest.Phone = src?.Phone;
         }
 
+        audit.SubLocations ??= [];
         db.SubLocations.RemoveRange(audit.SubLocations);
-        foreach (var loc in locations.Where(l => !string.IsNullOrWhiteSpace(l.Name)))
+        foreach (var loc in (incoming.SubLocations ?? []).Where(l => !string.IsNullOrWhiteSpace(l.Name)))
         {
             audit.SubLocations.Add(new SubLocation
             {
