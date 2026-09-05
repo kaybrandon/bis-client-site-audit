@@ -1,0 +1,36 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+.idea/
+*.db
+*.db-shm
+*.db-wal
+
+## Node
+node_modules/
+client/dist/
+*.log
+
+## Uploads (keep folder, ignore content)
+src/BisAudit.Api/wwwroot/uploads/**
+!src/BisAudit.Api/wwwroot/uploads/.gitkeep
+
+## Secrets / local
+appsettings.Local.json
+*.pfx
+client/.env
+client/.env.local
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Logs (keep folder marker so IIS publish has a logs directory)
+**/logs/*.log
+**/logs/stdout*
+!src/BisAudit.Api/logs/.gitkeep
