@@ -1,3 +1,7 @@
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+
 namespace BisAudit.Api.Data.Entities;
 
 public class IssueItem : IAuditOwned
@@ -14,6 +18,9 @@ public class IssueItem : IAuditOwned
     public decimal? MonthlyCostImpact { get; set; }
     public string? ImpactBasis { get; set; }
     public DateTime? LastAudited { get; set; }
+    [JsonIgnore]
+    [BindNever]
+    [ValidateNever]
     public ClientAudit? Audit { get; set; }
 
     public string DisplayTitle => string.IsNullOrWhiteSpace(IssueRecommendation) ? "Issue" : IssueRecommendation;
@@ -34,6 +41,9 @@ public class PurchaseItem : IAuditOwned
     public string? SavingsBasis { get; set; }
     public string Status { get; set; } = "To Quote";
     public DateTime? LastAudited { get; set; }
+    [JsonIgnore]
+    [BindNever]
+    [ValidateNever]
     public ClientAudit? Audit { get; set; }
 
     public string DisplayTitle => string.IsNullOrWhiteSpace(Item) ? "Purchase item" : Item;

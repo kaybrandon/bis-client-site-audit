@@ -1,5 +1,6 @@
 using BisAudit.Api.Data;
 using BisAudit.Api.Data.Entities;
+using BisAudit.Api.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace BisAudit.Api.Services;
@@ -73,16 +74,17 @@ public class AuditService(IDbContextFactory<ApplicationDbContext> factory, Photo
         return audit;
     }
 
-    public async Task SaveOverviewAsync(ClientAudit incoming, IEnumerable<SubLocation> locations, CancellationToken ct = default)
+    public async Task SaveOverviewAsync(Guid id, OverviewSaveRequest incoming, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
         var audit = await db.Audits
+            .AsSplitQuery()
             .Include(a => a.Contacts)
             .Include(a => a.SubLocations)
-            .FirstOrDefaultAsync(a => a.Id == incoming.Id, ct)
+            .FirstOrDefaultAsync(a => a.Id == id, ct)
             ?? throw new InvalidOperationException("Audit not found.");
 
-        audit.CompanyName = incoming.CompanyName.Trim();
+        audit.CompanyName = (incoming.CompanyName ?? "").Trim();
         audit.Industry = incoming.Industry;
         audit.EmployeeCount = incoming.EmployeeCount;
         audit.Address = incoming.Address;
@@ -95,9 +97,11 @@ public class AuditService(IDbContextFactory<ApplicationDbContext> factory, Photo
         audit.ClientPhotoPath = incoming.ClientPhotoPath;
         audit.UpdatedAt = DateTime.UtcNow;
 
+        var incomingContacts = incoming.Contacts ?? [];
+        audit.Contacts ??= [];
         foreach (var role in Enum.GetValues<ContactRole>())
         {
-            var src = incoming.Contacts.FirstOrDefault(c => c.Role == role);
+            var src = incomingContacts.FirstOrDefault(c => c.Role == role);
             var dest = audit.Contacts.FirstOrDefault(c => c.Role == role);
             if (dest is null)
             {
@@ -110,18 +114,38 @@ public class AuditService(IDbContextFactory<ApplicationDbContext> factory, Photo
             dest.Phone = src?.Phone;
         }
 
-        db.SubLocations.RemoveRange(audit.SubLocations);
-        foreach (var loc in locations.Where(l => !string.IsNullOrWhiteSpace(l.Name)))
+        audit.SubLocations ??= [];
+        foreach (var ghost in audit.SubLocations.Where(s => s.Id == Guid.Empty).ToList())
         {
-            audit.SubLocations.Add(new SubLocation
-            {
-                Id = loc.Id == Guid.Empty ? Guid.NewGuid() : loc.Id,
-                AuditId = audit.Id,
-                Name = loc.Name.Trim(),
-                Address = loc.Address,
-                Notes = loc.Notes
-            });
+            audit.SubLocations.Remove(ghost);
+            db.Entry(ghost).State = EntityState.Detached;
         }
+
+        var persistedIds = audit.SubLocations.Select(s => s.Id).ToHashSet();
+        var incomingLocs = (incoming.SubLocations ?? [])
+            .Where(l => !string.IsNullOrWhiteSpace(l.Name))
+            .ToList();
+        var keep = new HashSet<Guid>();
+        foreach (var loc in incomingLocs)
+        {
+            // Only reuse an id that this audit already persisted. Incoming ids can be
+            // empty, client-generated, or (with nested graphs) the parent audit id.
+            var dest = loc.Id != Guid.Empty && persistedIds.Contains(loc.Id)
+                ? audit.SubLocations.First(s => s.Id == loc.Id)
+                : null;
+            if (dest is null)
+            {
+                dest = new SubLocation { Id = Guid.NewGuid(), AuditId = audit.Id };
+                audit.SubLocations.Add(dest);
+                db.Entry(dest).State = EntityState.Added;
+            }
+            dest.Name = loc.Name.Trim();
+            dest.Address = loc.Address;
+            dest.Notes = loc.Notes;
+            keep.Add(dest.Id);
+        }
+        foreach (var extra in audit.SubLocations.Where(s => !keep.Contains(s.Id)).ToList())
+            db.SubLocations.Remove(extra);
 
         await db.SaveChangesAsync(ct);
     }

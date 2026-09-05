@@ -1,3 +1,7 @@
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+
 namespace BisAudit.Api.Data.Entities;
 
 public static class PhotoOwnerTypes
@@ -23,6 +27,9 @@ public class SitePhoto
     public string OwnerType { get; set; } = PhotoOwnerTypes.Audit;
     public Guid? OwnerId { get; set; }
     public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
+    [JsonIgnore]
+    [BindNever]
+    [ValidateNever]
     public ClientAudit? Audit { get; set; }
 
     public string PublicUrl => "/" + RelativePath.Replace('\\', '/').TrimStart('/');

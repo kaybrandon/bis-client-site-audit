@@ -16,7 +16,7 @@ public static class ContactExport
                 Csv(role), Csv(name), Csv(title), Csv(email), Csv(phone), Csv(dept), Csv(audit.CompanyName)));
         }
 
-        foreach (var c in audit.Contacts.OrderBy(c => c.Role))
+        foreach (var c in (audit.Contacts ?? []).OrderBy(c => c.Role))
             Row(c.Role.ToString(), c.Name, c.Title, c.Email, c.Phone, null);
 
         foreach (var w in audit.Workstations.Where(w =>

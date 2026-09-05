@@ -1,4 +1,5 @@
 using BisAudit.Api.Data.Entities;
+using BisAudit.Api.Models;
 using BisAudit.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -43,12 +44,13 @@ public class AuditsController(AuditService audits) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> SaveOverview(Guid id, [FromBody] ClientAudit body)
+    public async Task<IActionResult> SaveOverview(Guid id, [FromBody] OverviewSaveRequest body)
     {
-        body.Id = id;
-        await audits.SaveOverviewAsync(body, body.SubLocations ?? []);
+        if (body is null)
+            return BadRequest(new { message = "Overview payload is required." });
+        await audits.SaveOverviewAsync(id, body);
         var updated = await audits.GetAsync(id);
-        return Ok(ToDetail(updated!));
+        return updated is null ? NotFound() : Ok(ToDetail(updated));
     }
 
     [HttpGet("{id:guid}/contacts.csv")]
@@ -111,8 +113,8 @@ public class AuditsController(AuditService audits) : ControllerBase
             a.ClientPhotoPath,
             a.CreatedAt,
             a.UpdatedAt,
-            contacts = a.Contacts,
-            subLocations = a.SubLocations,
+            contacts = (a.Contacts ?? []).Select(AuditContactDto.From),
+            subLocations = (a.SubLocations ?? []).Select(SubLocationDto.From),
             workstations = a.Workstations,
             networkItems = a.NetworkItems,
             serverStorageItems = a.ServerStorageItems,
