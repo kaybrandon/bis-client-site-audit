@@ -1,17 +1,23 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../api'
+import { ConfirmSheet } from '../components/ConfirmSheet'
 import { Header } from '../components/Header'
 import { Modal, Field } from '../components/Modal'
 import { StatusBadge } from '../components/StatusBadge'
-import type { AuditSummary } from '../types'
+import { readLastAuditId } from '../lastAudit'
+import { nextIncompleteSection, type AuditSummary } from '../types'
 
 export function Dashboard() {
   const [items, setItems] = useState<AuditSummary[]>([])
   const [showNew, setShowNew] = useState(false)
   const [name, setName] = useState('')
+  const [pendingDup, setPendingDup] = useState<string | null>(null)
   const [params] = useSearchParams()
   const nav = useNavigate()
+  const lastId = readLastAuditId()
+  const last = items.find((a) => a.id === lastId)
+  const continueSlug = last ? (nextIncompleteSection(last.sections, '')?.slug ?? 'overview') : null
 
   const load = () => api.audits().then(setItems)
 
@@ -31,8 +37,8 @@ export function Dashboard() {
   }
 
   const duplicate = async (id: string) => {
-    if (!confirm('Duplicate this audit?')) return
     const copy = await api.duplicate(id)
+    setPendingDup(null)
     nav(`/audits/${copy.id}/overview`)
   }
 
@@ -45,6 +51,18 @@ export function Dashboard() {
           <div className="stat-card"><label>Open critical / high</label><strong>{crit}</strong></div>
           <div className="stat-card"><label>Completed audits</label><strong>{completed}</strong></div>
         </div>
+        {last && continueSlug && (
+          <div className="continue-card">
+            <div>
+              <p className="muted" style={{ margin: 0 }}>Pick up where you left off</p>
+              <h2 style={{ margin: '4px 0 0' }}>{last.companyName}</h2>
+              <p className="muted">
+                {last.progress}% · next: {nextIncompleteSection(last.sections, '')?.title ?? 'Overview'}
+              </p>
+            </div>
+            <Link className="btn btn-primary" to={`/audits/${last.id}/${continueSlug}`}>Continue</Link>
+          </div>
+        )}
         <div className="section-head">
           <div>
             <h2>Client audits</h2>
@@ -78,7 +96,7 @@ export function Dashboard() {
                 <div className="card-actions">
                   <Link className="btn btn-primary" to={`/audits/${audit.id}/overview`}>Open</Link>
                   <Link className="btn btn-ghost-dark" to={`/reports/${audit.id}`}>Report</Link>
-                  <button type="button" className="btn btn-ghost-dark" onClick={() => void duplicate(audit.id)}>Duplicate</button>
+                  <button type="button" className="btn btn-ghost-dark" onClick={() => setPendingDup(audit.id)}>Duplicate</button>
                 </div>
               </div>
             </article>
@@ -92,6 +110,15 @@ export function Dashboard() {
           </Field>
           <p className="muted">Status will be Planning, audit date today, industry Marketing. You can change these on Overview.</p>
         </Modal>
+      )}
+      {pendingDup && (
+        <ConfirmSheet
+          title="Duplicate audit"
+          message={`Create a copy of ${items.find((a) => a.id === pendingDup)?.companyName ?? 'this audit'}?`}
+          confirmLabel="Duplicate"
+          onConfirm={() => void duplicate(pendingDup)}
+          onCancel={() => setPendingDup(null)}
+        />
       )}
     </div>
   )

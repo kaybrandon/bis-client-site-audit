@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet, useLocation, useParams } from 'react-router-dom'
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../api'
+import { rememberLastAudit } from '../lastAudit'
 import { SECTIONS, nextIncompleteSection, sectionCue, type AuditDetail } from '../types'
 
 export type AuditOutlet = { audit: AuditDetail | null; reload: () => Promise<void> }
@@ -19,6 +20,10 @@ export function AuditShell() {
   useEffect(() => {
     void reload()
   }, [reload])
+
+  useEffect(() => {
+    if (id) rememberLastAudit(id)
+  }, [id])
 
   const next = nextIncompleteSection(audit?.sections, current)
 

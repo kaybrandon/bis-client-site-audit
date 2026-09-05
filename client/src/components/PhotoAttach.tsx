@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom'
 import { api } from '../api'
 import type { SitePhoto } from '../types'
 import type { AuditOutlet } from './AuditShell'
+import { ConfirmSheet } from './ConfirmSheet'
 import { PhotoPicker } from './PhotoPicker'
 
 export function PhotoAttach({
@@ -16,6 +17,7 @@ export function PhotoAttach({
   const { reload } = useOutletContext<AuditOutlet>()
   const [items, setItems] = useState<SitePhoto[]>([])
   const [open, setOpen] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null)
 
   const load = async () => {
     const all = await api.photos(auditId)
@@ -49,13 +51,26 @@ export function PhotoAttach({
               <img src={api.photoSrc(p.publicUrl || p.relativePath)} alt={p.caption || p.fileName} />
               <figcaption>
                 {p.fileName}
-                <button type="button" className="btn btn-danger" onClick={() => void api.deletePhoto(p.id).then(() => { void load(); void reload() })}>
+                <button type="button" className="btn btn-danger" onClick={() => setPendingDelete(p.id)}>
                   Delete
                 </button>
               </figcaption>
             </figure>
           ))}
         </div>
+      )}
+      {pendingDelete && (
+        <ConfirmSheet
+          title="Delete photo"
+          message="Delete this photo? This cannot be undone."
+          confirmLabel="Delete"
+          danger
+          onConfirm={() => {
+            void api.deletePhoto(pendingDelete).then(() => { void load(); void reload() })
+            setPendingDelete(null)
+          }}
+          onCancel={() => setPendingDelete(null)}
+        />
       )}
     </div>
   )

@@ -212,7 +212,11 @@ table.data th { color: var(--muted); font-weight: 650; }
 .login-wrap { min-height: 100vh; display: grid; place-items: center; background: var(--navy-deep); padding: 24px; padding-top: max(24px, env(safe-area-inset-top)); }
 .login-card { background: #fff; width: min(420px, 100%); border-radius: 16px; padding: 28px; }
 .login-card h1 { font-size: 1.3rem; }
-.empty { padding: 28px; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: 12px; }
+.empty {
+    padding: 28px; text-align: center; color: var(--muted);
+    border: 1px dashed var(--line); border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
 .error { color: var(--danger); }
 
 .modal-error { margin: 0 20px 0; }
@@ -230,6 +234,25 @@ table.data th { color: var(--muted); font-weight: 650; }
 .toast-warn { background: #7a5b00; }
 .session-resume { z-index: 55; }
 .session-card { width: min(420px, 100%); }
+.confirm-backdrop {
+    position: fixed; inset: 0; background: rgba(13, 26, 46, 0.45);
+    display: flex; align-items: flex-end; justify-content: center;
+    padding: 16px; z-index: 50;
+}
+.confirm-sheet {
+    background: #fff; border-radius: 16px 16px 12px 12px; width: min(480px, 100%);
+    padding: 20px 20px 16px; box-shadow: 0 20px 50px rgba(0,0,0,.25);
+}
+.confirm-sheet h3 { margin: 0 0 8px; }
+.confirm-sheet p { margin: 0 0 16px; color: var(--muted); }
+.confirm-actions { display: flex; flex-direction: column; gap: 8px; }
+.confirm-actions .btn { width: 100%; min-height: 48px; }
+.confirm-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
+.continue-card {
+    display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 18px 20px; margin-bottom: 22px;
+}
 
 @media (max-width: 1100px) {
     .kpi-row { grid-template-columns: repeat(2, 1fr); }
@@ -253,6 +276,11 @@ table.data th { color: var(--muted); font-weight: 650; }
     .stats-row, .form-grid { grid-template-columns: 1fr; }
     .content { padding: 20px 16px 40px; }
     .app-header { padding: 12px 16px; }
+}
+
+@media (min-width: 721px) {
+    .confirm-backdrop { align-items: center; }
+    .confirm-sheet { border-radius: 16px; }
 }
 
 @media (max-width: 720px) {

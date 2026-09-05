@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useOutletContext, useParams } from 'react-router-dom'
 import { api } from '../api'
 import type { AuditOutlet } from '../components/AuditShell'
+import { ConfirmSheet } from '../components/ConfirmSheet'
 import { PhotoPicker } from '../components/PhotoPicker'
 import { KEYS, type SitePhoto } from '../types'
 
@@ -12,6 +13,7 @@ export function Photos() {
   const [categories, setCategories] = useState<string[]>([])
   const [filter, setFilter] = useState('')
   const [uploadCategory, setUploadCategory] = useState('Site Photo')
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null)
 
   const load = () => api.photos(id).then(setItems)
 
@@ -61,7 +63,11 @@ export function Photos() {
           }}
         />
       </div>
-      {filtered.length === 0 ? <div className="empty">No photos yet.</div> : (
+      {filtered.length === 0 ? (
+        <div className="empty">
+          <p>{items.length === 0 ? 'No photos yet. Take a photo or pick from the library above.' : 'No photos in this category.'}</p>
+        </div>
+      ) : (
         <div className="photo-grid">
           {filtered.map((photo) => (
             <figure className="photo-tile" key={photo.id}>
@@ -72,14 +78,25 @@ export function Photos() {
                 {photo.ownerType}{photo.ownerId ? ' attachment' : ''}<br />
                 {photo.fileName}
                 <div className="photo-tile-actions">
-                  <button type="button" className="btn btn-danger" onClick={() => {
-                    if (confirm('Delete this photo?')) void api.deletePhoto(photo.id).then(() => { void load(); void reload() })
-                  }}>Delete</button>
+                  <button type="button" className="btn btn-danger" onClick={() => setPendingDelete(photo.id)}>Delete</button>
                 </div>
               </figcaption>
             </figure>
           ))}
         </div>
+      )}
+      {pendingDelete && (
+        <ConfirmSheet
+          title="Delete photo"
+          message="Delete this photo? This cannot be undone."
+          confirmLabel="Delete"
+          danger
+          onConfirm={() => {
+            void api.deletePhoto(pendingDelete).then(() => { void load(); void reload() })
+            setPendingDelete(null)
+          }}
+          onCancel={() => setPendingDelete(null)}
+        />
       )}
     </>
   )

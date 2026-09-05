@@ -11,6 +11,7 @@ export function Workstations() {
       section="workstations"
       ownerType="Workstation"
       photoCategory="Workstation"
+      addFirstLabel="Add first workstation"
       defaults={{ status: 'Current', workMode: 'Onsite' }}
       titleOf={(i) => [i.userName, i.deviceName].filter(Boolean).join(' / ') || 'Workstation'}
       detailOf={(i) => String(i.issuesReported || i.recommendations || '') || undefined}
@@ -45,6 +46,7 @@ export function Network() {
       section="network"
       ownerType="Network"
       photoCategory="Network"
+      addFirstLabel="Add first network item"
       defaults={{ status: 'Current', state: 'Current' }}
       titleOf={(i) => String(i.deviceName || 'Network item')}
       detailOf={(i) => String(i.details || '') || undefined}
@@ -69,6 +71,7 @@ export function Servers() {
       section="servers"
       ownerType="ServerStorage"
       photoCategory="Server/Storage"
+      addFirstLabel="Add first server / storage item"
       defaults={{ status: 'Current' }}
       titleOf={(i) => String(i.deviceName || 'Server / storage item')}
       detailOf={(i) => String(i.riskRecommendation || i.currentState || '') || undefined}
@@ -93,6 +96,7 @@ export function Security() {
       section="security"
       ownerType="SecurityAv"
       photoCategory="Security/Camera"
+      addFirstLabel="Add first security / AV item"
       defaults={{ status: 'Current' }}
       titleOf={(i) => String(i.deviceName || 'Security / AV item')}
       detailOf={(i) => String(i.recommendation || i.currentState || '') || undefined}
@@ -116,6 +120,7 @@ export function Software() {
       section="software"
       ownerType="Software"
       photoCategory="General"
+      addFirstLabel="Add first software item"
       defaults={{ status: 'Current' }}
       titleOf={(i) => String(i.softwareAccount || 'Software / account')}
       detailOf={(i) => String(i.actionItem || i.recommendedDirection || '') || undefined}
@@ -140,6 +145,7 @@ export function Issues() {
       section="issues"
       ownerType="Issue"
       photoCategory="General"
+      addFirstLabel="Add first issue"
       defaults={{ status: 'Open', severity: 'Medium', priorityRank: 3 }}
       titleOf={(i) => String(i.issueRecommendation || 'Issue')}
       detailOf={(i) => String(i.notes || '') || undefined}
@@ -167,6 +173,7 @@ export function Purchases() {
       section="purchases"
       ownerType="Purchase"
       photoCategory="General"
+      addFirstLabel="Add first purchase"
       defaults={{ status: 'To Quote', quantity: 1 }}
       titleOf={(i) => String(i.item || 'Purchase item')}
       detailOf={(i) => String(i.rationale || '') || undefined}

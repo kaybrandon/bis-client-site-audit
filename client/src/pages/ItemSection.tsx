@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useOutletContext, useParams } from 'react-router-dom'
 import { api } from '../api'
 import type { AuditOutlet } from '../components/AuditShell'
+import { ConfirmSheet } from '../components/ConfirmSheet'
 import { Modal, Field } from '../components/Modal'
 import { PhotoAttach } from '../components/PhotoAttach'
 import { StatusBadge } from '../components/StatusBadge'
@@ -17,7 +18,7 @@ export type FieldDef = {
 
 export function ItemSection({
   title, section, ownerType, photoCategory, fields, titleOf, detailOf, badgesOf, defaults,
-  extraFilters,
+  extraFilters, addFirstLabel,
 }: {
   title: string
   section: string
@@ -29,6 +30,7 @@ export function ItemSection({
   badgesOf?: (item: Record<string, unknown>) => (string | undefined)[]
   defaults: Record<string, unknown>
   extraFilters?: { severity?: boolean; status?: boolean }
+  addFirstLabel: string
 }) {
   const { id = '' } = useParams()
   const { reload: reloadAudit } = useOutletContext<AuditOutlet>()
@@ -40,6 +42,7 @@ export function ItemSection({
   const [statusFilter, setStatusFilter] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null)
 
   const load = () => api.items(id, section).then(setItems)
 
@@ -72,9 +75,11 @@ export function ItemSection({
     }
   }
 
+  const startAdd = () => { setError(null); setDraft({ ...defaults, auditId: id }) }
+
   const remove = async (itemId: string) => {
-    if (!confirm('Delete this item?')) return
     await api.deleteItem(id, section, itemId)
+    setPendingDelete(null)
     await load()
     await reloadAudit()
   }
@@ -102,11 +107,17 @@ export function ItemSection({
               {(options['Issue.Status'] || []).map((o) => <option key={o}>{o}</option>)}
             </select>
           )}
-          <button type="button" className="btn btn-primary" onClick={() => { setError(null); setDraft({ ...defaults, auditId: id }) }}>+ Add item</button>
+          <button type="button" className="btn btn-primary" onClick={startAdd}>+ Add item</button>
         </div>
       </div>
       {error && !draft && <p className="error">{error}</p>}
-      {filtered.length === 0 && <div className="empty">No items match the current filter.</div>}
+      {items.length === 0 && (
+        <div className="empty">
+          <p>Nothing documented in this section yet.</p>
+          <button type="button" className="btn btn-primary" onClick={startAdd}>{addFirstLabel}</button>
+        </div>
+      )}
+      {items.length > 0 && filtered.length === 0 && <div className="empty">No items match the current filter.</div>}
       {filtered.map((item) => (
         <article className={`item-card ${usesNa && item.needsAttention ? 'needs-attention' : ''}`} key={String(item.id)}>
           <div>
@@ -116,7 +127,7 @@ export function ItemSection({
               {usesNa && item.needsAttention ? <span className="warn" title="Needs attention">⚠</span> : null}
               <div className="item-title-actions">
                 <button type="button" className="btn btn-ghost-dark" onClick={() => { setError(null); setDraft({ ...item }) }}>Edit</button>
-                <button type="button" className="btn btn-danger" onClick={() => void remove(String(item.id))}>Delete</button>
+                <button type="button" className="btn btn-danger" onClick={() => setPendingDelete(String(item.id))}>Delete</button>
               </div>
             </div>
             {(() => {
@@ -138,6 +149,16 @@ export function ItemSection({
             </details>
           )}
         </Modal>
+      )}
+      {pendingDelete && (
+        <ConfirmSheet
+          title="Delete item"
+          message="Delete this item? This cannot be undone."
+          confirmLabel="Delete"
+          danger
+          onConfirm={() => void remove(pendingDelete)}
+          onCancel={() => setPendingDelete(null)}
+        />
       )}
     </>
   )

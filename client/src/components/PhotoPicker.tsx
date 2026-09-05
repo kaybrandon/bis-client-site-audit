@@ -25,34 +25,43 @@ export function PhotoPicker({
   const [status, setStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState<File[]>([])
+  const [failedName, setFailedName] = useState<string | null>(null)
+  const [failedIndex, setFailedIndex] = useState(0)
 
-  const send = async (files: File[]) => {
+  const resetInputs = () => {
+    if (cameraRef.current) cameraRef.current.value = ''
+    if (libraryRef.current) libraryRef.current.value = ''
+  }
+
+  const send = async (files: File[], startAt = 0) => {
     if (!files.length) return
     setPending(files)
     setBusy(true)
     setError(null)
+    setFailedName(null)
     try {
-      for (let i = 0; i < files.length; i++) {
+      for (let i = startAt; i < files.length; i++) {
         setStatus(files.length > 1 ? `Uploading ${i + 1} of ${files.length}…` : 'Uploading…')
-        await upload(files[i], caption.trim() || undefined)
+        try {
+          await upload(files[i], caption.trim() || undefined)
+        } catch (e) {
+          setFailedIndex(i)
+          setFailedName(files[i].name)
+          setError(e instanceof Error ? e.message : 'Upload failed. Check Wi-Fi and retry.')
+          setStatus(null)
+          return
+        }
       }
       setPending([])
       setCaption('')
       setStatus(null)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Upload failed. Check Wi-Fi and retry.')
-      setStatus(null)
     } finally {
       setBusy(false)
-      if (cameraRef.current) cameraRef.current.value = ''
-      if (libraryRef.current) libraryRef.current.value = ''
+      resetInputs()
     }
   }
 
-  const onPick = (list: FileList | null) => {
-    if (!list?.length) return
-    void send(Array.from(list))
-  }
+  const remainingAfterFail = pending.length - failedIndex - 1
 
   return (
     <div className="photo-picker">
@@ -77,7 +86,7 @@ export function PhotoPicker({
             capture="environment"
             className="sr-only"
             disabled={busy}
-            onChange={(e) => onPick(e.target.files)}
+            onChange={(e) => { if (e.target.files?.length) void send(Array.from(e.target.files)) }}
           />
         </label>
         <label className={`btn btn-ghost-dark ${busy ? 'is-disabled' : ''}`}>
@@ -89,16 +98,22 @@ export function PhotoPicker({
             multiple={allowMultiple}
             className="sr-only"
             disabled={busy}
-            onChange={(e) => onPick(e.target.files)}
+            onChange={(e) => { if (e.target.files?.length) void send(Array.from(e.target.files)) }}
           />
         </label>
         {error && pending.length > 0 && (
-          <button type="button" className="btn btn-primary" disabled={busy} onClick={() => void send(pending)}>
-            Retry upload
+          <button type="button" className="btn btn-primary" disabled={busy} onClick={() => void send(pending, failedIndex)}>
+            Retry {failedName ? `"${failedName}"` : 'upload'}
+          </button>
+        )}
+        {error && remainingAfterFail > 0 && (
+          <button type="button" className="btn btn-ghost-dark" disabled={busy} onClick={() => void send(pending, failedIndex + 1)}>
+            Skip and continue ({remainingAfterFail} left)
           </button>
         )}
       </div>
       {status && <p className="muted">{status}</p>}
+      {failedName && <p className="error">Couldn’t upload “{failedName}”.</p>}
       {error && <p className="error">{error}</p>}
       {!compact && (
         <p className="muted photo-picker-hint">

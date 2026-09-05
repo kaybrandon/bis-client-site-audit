@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useBlocker, useOutletContext, useParams } from 'react-router-dom'
 import { api } from '../api'
+import { ConfirmSheet } from '../components/ConfirmSheet'
 import { Field } from '../components/Modal'
 import { PhotoPicker } from '../components/PhotoPicker'
 import type { AuditOutlet } from '../components/AuditShell'
@@ -47,13 +48,6 @@ export function Overview() {
     window.addEventListener('beforeunload', onBeforeUnload)
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
   }, [dirty])
-
-  useEffect(() => {
-    if (blocker.state !== 'blocked') return
-    const leave = window.confirm('You have unsaved Overview changes. Leave anyway?')
-    if (leave) blocker.proceed()
-    else blocker.reset()
-  }, [blocker])
 
   if (!form) return <p>Loading…</p>
 
@@ -178,6 +172,16 @@ export function Overview() {
           + Add sub-location
         </button>
       </div>
+      {blocker.state === 'blocked' && (
+        <ConfirmSheet
+          title="Unsaved changes"
+          message="You have unsaved Overview changes. Leave anyway?"
+          confirmLabel="Leave"
+          danger
+          onConfirm={() => blocker.proceed()}
+          onCancel={() => blocker.reset()}
+        />
+      )}
     </>
   )
 }
