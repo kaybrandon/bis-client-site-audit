@@ -217,6 +217,7 @@ table.data th { color: var(--muted); font-weight: 650; }
     border: 1px dashed var(--line); border-radius: 12px;
     display: flex; flex-direction: column; align-items: center; gap: 12px;
 }
+.empty .btn { white-space: normal; height: auto; }
 .error { color: var(--danger); }
 
 .modal-error { margin: 0 20px 0; }
