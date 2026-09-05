@@ -78,6 +78,7 @@ public class AuditService(IDbContextFactory<ApplicationDbContext> factory, Photo
     {
         await using var db = await factory.CreateDbContextAsync(ct);
         var audit = await db.Audits
+            .AsSplitQuery()
             .Include(a => a.Contacts)
             .Include(a => a.SubLocations)
             .FirstOrDefaultAsync(a => a.Id == id, ct)
@@ -114,19 +115,29 @@ public class AuditService(IDbContextFactory<ApplicationDbContext> factory, Photo
         }
 
         audit.SubLocations ??= [];
+        foreach (var ghost in audit.SubLocations.Where(s => s.Id == Guid.Empty).ToList())
+        {
+            audit.SubLocations.Remove(ghost);
+            db.Entry(ghost).State = EntityState.Detached;
+        }
+
+        var persistedIds = audit.SubLocations.Select(s => s.Id).ToHashSet();
         var incomingLocs = (incoming.SubLocations ?? [])
             .Where(l => !string.IsNullOrWhiteSpace(l.Name))
             .ToList();
         var keep = new HashSet<Guid>();
         foreach (var loc in incomingLocs)
         {
-            var dest = loc.Id != Guid.Empty
-                ? audit.SubLocations.FirstOrDefault(s => s.Id == loc.Id)
+            // Only reuse an id that this audit already persisted. Incoming ids can be
+            // empty, client-generated, or (with nested graphs) the parent audit id.
+            var dest = loc.Id != Guid.Empty && persistedIds.Contains(loc.Id)
+                ? audit.SubLocations.First(s => s.Id == loc.Id)
                 : null;
             if (dest is null)
             {
                 dest = new SubLocation { Id = Guid.NewGuid(), AuditId = audit.Id };
                 audit.SubLocations.Add(dest);
+                db.Entry(dest).State = EntityState.Added;
             }
             dest.Name = loc.Name.Trim();
             dest.Address = loc.Address;
