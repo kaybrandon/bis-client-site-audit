@@ -75,10 +75,25 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ companyName }),
     }),
-  saveOverview: (id: string, body: unknown) =>
+  saveOverview: (id: string, body: import('./types').AuditDetail) =>
     request<import('./types').AuditDetail>(`/api/audits/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        id,
+        companyName: body.companyName,
+        industry: body.industry,
+        employeeCount: body.employeeCount,
+        address: body.address,
+        status: body.status,
+        auditDate: body.auditDate,
+        preparedBy: body.preparedBy,
+        auditScope: body.auditScope,
+        executiveSummary: body.executiveSummary,
+        previousItSupport: body.previousItSupport,
+        clientPhotoPath: body.clientPhotoPath,
+        contacts: body.contacts,
+        subLocations: body.subLocations,
+      }),
     }),
   duplicate: (id: string) =>
     request<import('./types').AuditDetail>(`/api/audits/${id}/duplicate`, { method: 'POST' }),

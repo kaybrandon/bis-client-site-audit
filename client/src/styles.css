@@ -242,7 +242,8 @@ table.data th { color: var(--muted); font-weight: 650; }
         background: #f7f9fc;
     }
     .audit-nav { flex-direction: row; gap: 8px; min-width: min-content; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    .audit-strip { flex-shrink: 0; }
+    .audit-strip { flex-shrink: 0; width: 100%; }
+    .audit-strip .btn { min-height: 44px; }
     .nav-item { margin-bottom: 0; white-space: nowrap; flex-shrink: 0; }
     .item-card { grid-template-columns: 1fr; }
     .audit-main { padding: 20px 16px 40px; }
