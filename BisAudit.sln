@@ -7,6 +7,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{3D79ACD6-485
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BisAudit.Api", "src\BisAudit.Api\BisAudit.Api.csproj", "{45ED3165-FB55-4DC4-8F34-E1A59669E6CE}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{05AACCCC-27A1-46E3-A5A4-F9EBEA03B7BA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BisAudit.Api.Tests", "tests\BisAudit.Api.Tests\BisAudit.Api.Tests.csproj", "{5438487B-20A5-479F-9CB6-96736D19D64C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,8 +24,13 @@ Global
 		{45ED3165-FB55-4DC4-8F34-E1A59669E6CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{45ED3165-FB55-4DC4-8F34-E1A59669E6CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{45ED3165-FB55-4DC4-8F34-E1A59669E6CE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5438487B-20A5-479F-9CB6-96736D19D64C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5438487B-20A5-479F-9CB6-96736D19D64C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5438487B-20A5-479F-9CB6-96736D19D64C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5438487B-20A5-479F-9CB6-96736D19D64C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{45ED3165-FB55-4DC4-8F34-E1A59669E6CE} = {3D79ACD6-4856-47F2-8AC9-39FE7391A8C3}
+		{5438487B-20A5-479F-9CB6-96736D19D64C} = {05AACCCC-27A1-46E3-A5A4-F9EBEA03B7BA}
 	EndGlobalSection
 EndGlobal
