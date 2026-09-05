@@ -1,4 +1,6 @@
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace BisAudit.Api.Data.Entities;
 
@@ -31,12 +33,15 @@ public class ClientAudit
     public List<SitePhoto> Photos { get; set; } = [];
 
     [JsonIgnore]
+    [ValidateNever]
     public AuditContact? PrimaryContact => Contacts?.FirstOrDefault(c => c.Role == ContactRole.Primary);
 
     [JsonIgnore]
+    [ValidateNever]
     public AuditContact? TechnicalContact => Contacts?.FirstOrDefault(c => c.Role == ContactRole.Technical);
 
     [JsonIgnore]
+    [ValidateNever]
     public AuditContact? BillingContact => Contacts?.FirstOrDefault(c => c.Role == ContactRole.Billing);
 }
 
@@ -58,6 +63,8 @@ public class AuditContact
     public string? Phone { get; set; }
 
     [JsonIgnore]
+    [BindNever]
+    [ValidateNever]
     public ClientAudit? Audit { get; set; }
 }
 
@@ -70,5 +77,7 @@ public class SubLocation
     public string? Notes { get; set; }
 
     [JsonIgnore]
+    [BindNever]
+    [ValidateNever]
     public ClientAudit? Audit { get; set; }
 }

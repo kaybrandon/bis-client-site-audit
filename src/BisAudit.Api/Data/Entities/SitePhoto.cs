@@ -1,4 +1,6 @@
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace BisAudit.Api.Data.Entities;
 
@@ -26,6 +28,8 @@ public class SitePhoto
     public Guid? OwnerId { get; set; }
     public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
     [JsonIgnore]
+    [BindNever]
+    [ValidateNever]
     public ClientAudit? Audit { get; set; }
 
     public string PublicUrl => "/" + RelativePath.Replace('\\', '/').TrimStart('/');

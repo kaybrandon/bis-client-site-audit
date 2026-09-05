@@ -1,4 +1,6 @@
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace BisAudit.Api.Data.Entities;
 
@@ -25,6 +27,8 @@ public class WorkstationItem : IAuditOwned
     public DateTime? LastAudited { get; set; }
     public bool NeedsAttention { get; set; }
     [JsonIgnore]
+    [BindNever]
+    [ValidateNever]
     public ClientAudit? Audit { get; set; }
 
     public string DisplayTitle =>
@@ -46,6 +50,8 @@ public class NetworkItem : IAuditOwned
     public DateTime? LastAudited { get; set; }
     public bool NeedsAttention { get; set; }
     [JsonIgnore]
+    [BindNever]
+    [ValidateNever]
     public ClientAudit? Audit { get; set; }
 
     public string DisplayTitle => string.IsNullOrWhiteSpace(DeviceName) ? "Network item" : DeviceName;
@@ -65,6 +71,8 @@ public class ServerStorageItem : IAuditOwned
     public DateTime? LastAudited { get; set; }
     public bool NeedsAttention { get; set; }
     [JsonIgnore]
+    [BindNever]
+    [ValidateNever]
     public ClientAudit? Audit { get; set; }
 
     public string DisplayTitle => string.IsNullOrWhiteSpace(DeviceName) ? "Server / storage item" : DeviceName;
@@ -83,6 +91,8 @@ public class SecurityAvItem : IAuditOwned
     public DateTime? LastAudited { get; set; }
     public bool NeedsAttention { get; set; }
     [JsonIgnore]
+    [BindNever]
+    [ValidateNever]
     public ClientAudit? Audit { get; set; }
 
     public string DisplayTitle => string.IsNullOrWhiteSpace(DeviceName) ? "Security / AV item" : DeviceName;
@@ -102,6 +112,8 @@ public class SoftwareItem : IAuditOwned
     public DateTime? LastAudited { get; set; }
     public bool NeedsAttention { get; set; }
     [JsonIgnore]
+    [BindNever]
+    [ValidateNever]
     public ClientAudit? Audit { get; set; }
 
     public string DisplayTitle => string.IsNullOrWhiteSpace(SoftwareAccount) ? "Software / account" : SoftwareAccount;

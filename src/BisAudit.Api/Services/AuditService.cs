@@ -114,18 +114,27 @@ public class AuditService(IDbContextFactory<ApplicationDbContext> factory, Photo
         }
 
         audit.SubLocations ??= [];
-        db.SubLocations.RemoveRange(audit.SubLocations);
-        foreach (var loc in (incoming.SubLocations ?? []).Where(l => !string.IsNullOrWhiteSpace(l.Name)))
+        var incomingLocs = (incoming.SubLocations ?? [])
+            .Where(l => !string.IsNullOrWhiteSpace(l.Name))
+            .ToList();
+        var keep = new HashSet<Guid>();
+        foreach (var loc in incomingLocs)
         {
-            audit.SubLocations.Add(new SubLocation
+            var dest = loc.Id != Guid.Empty
+                ? audit.SubLocations.FirstOrDefault(s => s.Id == loc.Id)
+                : null;
+            if (dest is null)
             {
-                Id = loc.Id == Guid.Empty ? Guid.NewGuid() : loc.Id,
-                AuditId = audit.Id,
-                Name = loc.Name.Trim(),
-                Address = loc.Address,
-                Notes = loc.Notes
-            });
+                dest = new SubLocation { Id = Guid.NewGuid(), AuditId = audit.Id };
+                audit.SubLocations.Add(dest);
+            }
+            dest.Name = loc.Name.Trim();
+            dest.Address = loc.Address;
+            dest.Notes = loc.Notes;
+            keep.Add(dest.Id);
         }
+        foreach (var extra in audit.SubLocations.Where(s => !keep.Contains(s.Id)).ToList())
+            db.SubLocations.Remove(extra);
 
         await db.SaveChangesAsync(ct);
     }

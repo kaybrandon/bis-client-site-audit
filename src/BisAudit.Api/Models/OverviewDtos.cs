@@ -66,6 +66,6 @@ public class OverviewSaveRequest
     public string? ExecutiveSummary { get; set; }
     public string? PreviousItSupport { get; set; }
     public string? ClientPhotoPath { get; set; }
-    public List<AuditContactDto> Contacts { get; set; } = [];
-    public List<SubLocationDto> SubLocations { get; set; } = [];
+    public List<AuditContactDto>? Contacts { get; set; }
+    public List<SubLocationDto>? SubLocations { get; set; }
 }
