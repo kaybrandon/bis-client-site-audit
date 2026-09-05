@@ -94,10 +94,11 @@ public class AuditService(IDbContextFactory<ApplicationDbContext> factory, Photo
         audit.PreviousItSupport = incoming.PreviousItSupport;
         audit.ClientPhotoPath = incoming.ClientPhotoPath;
         audit.UpdatedAt = DateTime.UtcNow;
+        audit.Contacts ??= [];
 
         foreach (var role in Enum.GetValues<ContactRole>())
         {
-            var src = incoming.Contacts.FirstOrDefault(c => c.Role == role);
+            var src = incoming.Contacts?.FirstOrDefault(c => c.Role == role);
             var dest = audit.Contacts.FirstOrDefault(c => c.Role == role);
             if (dest is null)
             {
@@ -110,12 +111,17 @@ public class AuditService(IDbContextFactory<ApplicationDbContext> factory, Photo
             dest.Phone = src?.Phone;
         }
 
+        var snapshots = locations
+            .Where(l => !string.IsNullOrWhiteSpace(l.Name))
+            .Select(l => (l.Name, l.Address, l.Notes))
+            .ToList();
+
         db.SubLocations.RemoveRange(audit.SubLocations);
-        foreach (var loc in locations.Where(l => !string.IsNullOrWhiteSpace(l.Name)))
+        foreach (var loc in snapshots)
         {
             audit.SubLocations.Add(new SubLocation
             {
-                Id = loc.Id == Guid.Empty ? Guid.NewGuid() : loc.Id,
+                Id = Guid.NewGuid(),
                 AuditId = audit.Id,
                 Name = loc.Name.Trim(),
                 Address = loc.Address,

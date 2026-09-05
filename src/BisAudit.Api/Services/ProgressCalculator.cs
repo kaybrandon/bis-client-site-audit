@@ -76,7 +76,7 @@ public static class ProgressCalculator
             audit.Industry,
             audit.EmployeeCount is > 0 ? "yes" : null,
             audit.Address,
-            audit.Contacts.Any(c => !string.IsNullOrWhiteSpace(c.Name)) ? "yes" : null,
+            audit.Contacts?.Any(c => !string.IsNullOrWhiteSpace(c.Name)) == true ? "yes" : null,
             audit.AuditScope,
             audit.PreparedBy,
             audit.AuditDate != default ? "yes" : null,

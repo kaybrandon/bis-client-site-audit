@@ -1,4 +1,5 @@
 using BisAudit.Api.Data.Entities;
+using BisAudit.Api.Dtos;
 using BisAudit.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -43,10 +44,13 @@ public class AuditsController(AuditService audits) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> SaveOverview(Guid id, [FromBody] ClientAudit body)
+    public async Task<IActionResult> SaveOverview(Guid id, [FromBody] OverviewSaveRequest body)
     {
         body.Id = id;
-        await audits.SaveOverviewAsync(body, body.SubLocations ?? []);
+        var incoming = body.ToEntity();
+        var locations = (body.SubLocations ?? []).Select(l => l.ToEntity()).ToList();
+        incoming.SubLocations.Clear();
+        await audits.SaveOverviewAsync(incoming, locations);
         var updated = await audits.GetAsync(id);
         return Ok(ToDetail(updated!));
     }
@@ -111,7 +115,16 @@ public class AuditsController(AuditService audits) : ControllerBase
             a.ClientPhotoPath,
             a.CreatedAt,
             a.UpdatedAt,
-            contacts = a.Contacts,
+            contacts = (a.Contacts ?? []).Select(c => new
+            {
+                c.Id,
+                c.AuditId,
+                c.Role,
+                c.Name,
+                c.Title,
+                c.Email,
+                c.Phone
+            }),
             subLocations = a.SubLocations,
             workstations = a.Workstations,
             networkItems = a.NetworkItems,
