@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, useLocation, useParams } from 'react-router-dom'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '../api'
 import { rememberLastAudit } from '../lastAudit'
 import { SECTIONS, nextIncompleteSection, sectionCue, type AuditDetail } from '../types'
@@ -11,6 +11,7 @@ export function AuditShell() {
   const loc = useLocation()
   const current = loc.pathname.split('/').pop() || 'overview'
   const [audit, setAudit] = useState<AuditDetail | null>(null)
+  const navRef = useRef<HTMLElement>(null)
 
   const reload = useCallback(async () => {
     if (!id) return
@@ -24,6 +25,11 @@ export function AuditShell() {
   useEffect(() => {
     if (id) rememberLastAudit(id)
   }, [id])
+
+  useEffect(() => {
+    const active = navRef.current?.querySelector<HTMLElement>('.nav-item.active')
+    active?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' })
+  }, [current])
 
   const next = nextIncompleteSection(audit?.sections, current)
 
@@ -51,25 +57,27 @@ export function AuditShell() {
       </header>
       <div className="audit-shell">
         <aside className="audit-side no-print">
-          <nav className="audit-nav" aria-label="Audit sections">
-            {SECTIONS.map((s) => {
-              const progress = audit?.sections.find((p) => p.key === s.slug)
-              const cue = sectionCue(progress)
-              return (
-                <NavLink
-                  key={s.slug}
-                  to={`/audits/${id}/${s.slug}`}
-                  title={s.title}
-                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''} cue-${cue.kind}`}
-                >
-                  <span className="num">{s.num}</span>
-                  <span className="nav-short">{s.short}</span>
-                  {cue.kind === 'na' ? <span className="nav-dot">·</span> : null}
-                  <span className={`nav-cue cue-${cue.kind}`}>{cue.text}</span>
-                </NavLink>
-              )
-            })}
-          </nav>
+          <div className="audit-nav-tray">
+            <nav ref={navRef} className="audit-nav" aria-label="Audit sections">
+              {SECTIONS.map((s) => {
+                const progress = audit?.sections.find((p) => p.key === s.slug)
+                const cue = sectionCue(progress)
+                return (
+                  <NavLink
+                    key={s.slug}
+                    to={`/audits/${id}/${s.slug}`}
+                    title={s.title}
+                    className={({ isActive }) => `nav-item ${isActive ? 'active' : ''} cue-${cue.kind}`}
+                  >
+                    <span className="num">{s.num}</span>
+                    <span className="nav-short">{s.short}</span>
+                    {cue.kind === 'na' ? <span className="nav-dot">·</span> : null}
+                    <span className={`nav-cue cue-${cue.kind}`}>{cue.text}</span>
+                  </NavLink>
+                )
+              })}
+            </nav>
+          </div>
           <div className="audit-strip">
             <span className="audit-strip-progress">
               {audit ? `${audit.progress}% complete` : 'Loading…'}
