@@ -73,7 +73,7 @@ npm install
 npm run dev
 ```
 
-- API: http://localhost:5088 (Swagger at `/swagger`)
+- API: http://localhost:5088 (Swagger at `/swagger` — Authorize with the JWT from `POST /api/auth/login`)
 - UI: http://localhost:5173 (Vite proxies `/api` and `/uploads` to the API)
 - CORS is also enabled for `http://localhost:5173` if you set `VITE_API_URL=http://localhost:5088`
 
@@ -114,6 +114,8 @@ Dashboard and report **audit progress** is a weighted sum (weights add to 100):
 ## Auth
 
 Phase 1: JWT from `POST /api/auth/login`. The SPA stores the token in `localStorage` and sends `Authorization: Bearer`.
+
+Swagger UI (`/swagger`) uses the same Bearer JWT (Authorize). It is **on** in Development/Staging and **off** in Production unless you set `Swagger__Enabled=true`. When it is off, `/swagger` is 404 (not the SPA shell).
 
 `Program.cs` comments show where to add **Windows Authentication / IIS** and **Entra ID** later.
 

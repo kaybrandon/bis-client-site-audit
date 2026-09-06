@@ -33,7 +33,7 @@ Turn IIS stdout **off** (`stdoutLogEnabled="false"` in `web.config`) once startu
 
 ## Detailed errors (staging only)
 
-`Logging:DetailedErrors` = `true` turns on the developer exception page and Swagger.
+`Logging:DetailedErrors` = `true` turns on the developer exception page. Swagger UI is separate (`Swagger:Enabled` / `Swagger__Enabled`; on in Development/Staging, off in Production).
 
 ```json
 "Logging": {

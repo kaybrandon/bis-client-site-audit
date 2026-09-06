@@ -5,6 +5,7 @@ using BisAudit.Api.Data;
 using BisAudit.Api.Data.Seed;
 using BisAudit.Api.Options;
 using BisAudit.Api.Services;
+using BisAudit.Api.Swagger;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http.Features;
@@ -94,21 +95,22 @@ builder.Services.AddControllers()
         o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
         o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddBisAuditSwagger();
 
 var app = builder.Build();
 
 await DatabaseSeeder.SeedAsync(app.Services);
 
+var swaggerEnabled = SwaggerExtensions.IsEnabled(app.Configuration, app.Environment);
+app.Logger.LogInformation(
+    "Swagger UI is {SwaggerState} ({Environment})",
+    swaggerEnabled ? "enabled" : "disabled",
+    app.Environment.EnvironmentName);
+
 var detailedErrors = app.Configuration.GetValue("Logging:DetailedErrors", false)
                      || app.Environment.IsDevelopment();
 if (detailedErrors)
-{
     app.UseDeveloperExceptionPage();
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
 else
 {
     app.UseExceptionHandler(errorApp =>
@@ -123,6 +125,8 @@ else
         });
     });
 }
+
+app.UseBisAuditSwagger(swaggerEnabled);
 
 if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
@@ -150,9 +154,6 @@ if (Path.IsPathRooted(uploadOptions.RootPath) || !normalizedUpload.StartsWith("w
 }
 
 app.MapControllers();
-
-var webRoot = app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot");
-if (File.Exists(Path.Combine(webRoot, "index.html")))
-    app.MapFallbackToFile("index.html");
+app.MapBisAuditSpaFallback();
 
 app.Run();
