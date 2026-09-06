@@ -7,6 +7,38 @@ export class AuthExpiredError extends Error {
   }
 }
 
+export class ForbiddenError extends Error {
+  constructor() {
+    super('You do not have permission to do that.')
+    this.name = 'ForbiddenError'
+  }
+}
+
+export type FieldErrors = Record<string, string[]>
+
+export class ApiError extends Error {
+  status: number
+  errors: FieldErrors
+  constructor(message: string, status: number, errors: FieldErrors = {}) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+    this.errors = errors
+  }
+}
+
+function readFieldErrors(body: unknown): FieldErrors {
+  if (!body || typeof body !== 'object') return {}
+  const raw = (body as { errors?: unknown }).errors
+  if (!raw || typeof raw !== 'object') return {}
+  const errors: FieldErrors = {}
+  for (const [key, value] of Object.entries(raw)) {
+    if (Array.isArray(value)) errors[key] = value.map(String)
+    else if (typeof value === 'string') errors[key] = [value]
+  }
+  return errors
+}
+
 type ExpiredHandler = () => void
 let expiredHandler: ExpiredHandler | null = null
 
@@ -47,13 +79,17 @@ async function request<T>(path: string, init: RequestInit = {}, attempt = 0): Pr
     notifyExpired()
     throw new AuthExpiredError()
   }
+  if (res.status === 403)
+    throw new ForbiddenError()
   if (!res.ok) {
     let message = `${res.status} ${res.statusText}`
+    let errors: FieldErrors = {}
     try {
       const body = await res.json()
       message = body.message || body.title || message
+      errors = readFieldErrors(body)
     } catch { /* ignore */ }
-    throw new Error(message)
+    throw new ApiError(message, res.status, errors)
   }
   if (res.status === 204) return undefined as T
   const ct = res.headers.get('content-type') || ''
@@ -63,11 +99,21 @@ async function request<T>(path: string, init: RequestInit = {}, attempt = 0): Pr
 
 export const api = {
   login: (email: string, password: string) =>
-    request<{ token: string; email: string }>('/api/auth/login', {
+    request<{ token: string; email: string; isAdmin: boolean }>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     }),
-  me: () => request<{ email: string }>('/api/auth/me'),
+  me: () => request<{ email: string; isAdmin: boolean }>('/api/auth/me'),
+  users: () => request<import('./types').AppUser[]>('/api/users'),
+  createUser: (email: string, password: string, confirmPassword: string) =>
+    request<import('./types').AppUser>('/api/users', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, confirmPassword }),
+    }),
+  disableUser: (id: string) =>
+    request<import('./types').AppUser>(`/api/users/${id}/disable`, { method: 'POST' }),
+  enableUser: (id: string) =>
+    request<import('./types').AppUser>(`/api/users/${id}/enable`, { method: 'POST' }),
   audits: () => request<import('./types').AuditSummary[]>('/api/audits'),
   audit: (id: string) => request<import('./types').AuditDetail>(`/api/audits/${id}`),
   createAudit: (companyName: string) =>

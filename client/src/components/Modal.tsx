@@ -37,7 +37,13 @@ export function Modal({
 }
 
 export function Field({
-  label, children, full, check,
-}: { label: string; children: ReactNode; full?: boolean; check?: boolean }) {
-  return <label className={`fld ${full ? 'full' : ''} ${check ? 'check' : ''}`}>{label}{children}</label>
+  label, children, full, check, error,
+}: { label: string; children: ReactNode; full?: boolean; check?: boolean; error?: string | string[] }) {
+  const message = Array.isArray(error) ? error.filter(Boolean).join(' ') : error
+  return (
+    <label className={`fld ${full ? 'full' : ''} ${check ? 'check' : ''}`}>
+      {label}{children}
+      {message ? <span className="field-error" role="alert">{message}</span> : null}
+    </label>
+  )
 }

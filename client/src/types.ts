@@ -84,6 +84,14 @@ export interface AuditDetail extends AuditSummary {
   photos: SitePhoto[]
 }
 
+export interface AppUser {
+  id: string
+  email: string
+  active: boolean
+  isAdmin: boolean
+  createdAt: string
+}
+
 export interface DropdownList {
   id: string
   listKey: string
