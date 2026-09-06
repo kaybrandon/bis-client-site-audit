@@ -88,19 +88,26 @@ export function Settings() {
 
 function SwaggerAdminPanel() {
   const [enabled, setEnabled] = useState(false)
+  const [ready, setReady] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [copyMessage, setCopyMessage] = useState<string | null>(null)
 
   useEffect(() => {
+    let cancelled = false
     void api.swaggerSetting().then((row) => {
+      if (cancelled) return
       setEnabled(row.enabled)
       setLoadError(null)
+      setReady(true)
     }).catch((e) => {
+      if (cancelled) return
       if (e instanceof ForbiddenError) return
       setLoadError(e instanceof Error ? e.message : 'Could not load Swagger setting.')
+      setReady(true)
     })
+    return () => { cancelled = true }
   }, [])
 
   const toggle = async () => {
@@ -151,7 +158,7 @@ function SwaggerAdminPanel() {
           role="switch"
           aria-checked={enabled}
           aria-label="Enable Swagger UI"
-          disabled={busy}
+          disabled={busy || !ready}
           onClick={() => void toggle()}
         >
           <span className="setting-toggle-track" aria-hidden="true">
