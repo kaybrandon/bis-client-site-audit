@@ -112,6 +112,8 @@ test('logout clears session keys but not the remembered-email helper', () => {
 test('sticky Take photo uses the Site Photos pipeline and does not navigate', () => {
   const btn = read('components/TakePhotoButton.tsx')
   const shell = read('components/AuditShell.tsx')
+  const modal = read('components/Modal.tsx')
+  const items = read('pages/ItemSection.tsx')
   const photos = read('pages/Photos.tsx')
   const picker = read('components/PhotoPicker.tsx')
 
@@ -126,6 +128,11 @@ test('sticky Take photo uses the Site Photos pipeline and does not navigate', ()
 
   assert.match(shell, /app-header-sticky/)
   assert.match(shell, /TakePhotoButton auditId=\{id\}/)
+
+  assert.match(modal, /modal-take-photo/)
+  assert.match(modal, /TakePhotoButton auditId=\{auditId\}/)
+  assert.match(modal, /Close/)
+  assert.match(items, /<Modal title=\{title\} auditId=\{id\}/)
 
   assert.match(photos, /<PhotoPicker/)
   assert.match(picker, /cameraLabel = 'Take photo'/)

@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react'
+import { TakePhotoButton } from './TakePhotoButton'
 
 export function Modal({
-  title, children, onSave, onClose, saveLabel = 'Save', busy = false, error,
+  title, children, onSave, onClose, saveLabel = 'Save', busy = false, error, auditId,
 }: {
   title: string
   children: ReactNode
@@ -10,13 +11,20 @@ export function Modal({
   saveLabel?: string
   busy?: boolean
   error?: string | null
+  /** When set, mobile sheets show Take photo in the header (Title | Take photo | Close). */
+  auditId?: string
 }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="modal-title">
-        <header>
+        <header className={auditId ? 'has-take-photo' : undefined}>
           <h3 id="modal-title" style={{ margin: 0 }}>{title}</h3>
-          <button type="button" className="btn btn-ghost-dark" onClick={onClose}>Close</button>
+          {auditId ? (
+            <span className="modal-take-photo">
+              <TakePhotoButton auditId={auditId} />
+            </span>
+          ) : null}
+          <button type="button" className="btn btn-ghost-dark modal-close" onClick={onClose}>Close</button>
         </header>
         <div className="body">{children}</div>
         {error && <p className="error modal-error">{error}</p>}
