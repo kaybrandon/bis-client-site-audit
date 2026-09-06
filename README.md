@@ -113,7 +113,7 @@ Dashboard and report **audit progress** is a weighted sum (weights add to 100):
 
 ## Auth
 
-Phase 1: JWT from `POST /api/auth/login`. The SPA stores the token in `localStorage` and sends `Authorization: Bearer`. There is no public self-signup. Admins manage accounts on **Users** (`GET/POST /api/users`). Soft-disable uses Identity lockout so login fails until re-enable. The seed account stays in the **Admin** role; the last remaining admin cannot be disabled.
+Phase 1: JWT from `POST /api/auth/login`. The SPA stores the token in `localStorage` and sends `Authorization: Bearer`. There is no public self-signup. Admins manage accounts under **Settings → Users** (`GET/POST /api/users`). Soft-disable uses Identity lockout so login fails until re-enable. The seed account stays in the **Admin** role; the last remaining admin cannot be disabled.
 
 Swagger UI (`/swagger`) uses the same Bearer JWT (Authorize). Admins turn it on or off under **Settings → Enable Swagger UI** (stored in the database, survives restart, no App Setting change). The first-run default is **on** in Development/Staging and **off** in Production (`Swagger:Enabled` / `Swagger__Enabled` only seeds that first row). When it is off, `/swagger` is 404 (not the SPA shell). Enabling Swagger does not open anonymous API access.
 
@@ -130,8 +130,8 @@ Uploaded through `POST /api/audits/{id}/photos` (multipart). Files land under `w
 | `/` | Dashboard — stats, cards, new / duplicate / report / open |
 | `/audits/:id/overview` … `/photos` | Nine-section audit workspace |
 | `/reports` and `/reports/:id` | Printable client report (browser Print / PDF) |
-| `/settings` | Dropdown lists; admins also get Enable Swagger UI and Copy Bearer token |
-| `/users` | Admin-only local accounts (add, disable, re-enable) |
+| `/settings` | Dropdown lists (single-open accordion); admins also get Enable Swagger UI and Copy Bearer token |
+| `/settings/users` | Admin-only local accounts (add, disable, re-enable). `/users` redirects here |
 | `/login` | Local account sign-in |
 
 ## Logging
