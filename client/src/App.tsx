@@ -6,6 +6,7 @@ import { SessionResume } from './components/SessionResume'
 import { Login } from './pages/Login'
 import { Dashboard } from './pages/Dashboard'
 import { Settings } from './pages/Settings'
+import { Users } from './pages/Users'
 import { Reports, ReportPrint } from './pages/Reports'
 import { Overview } from './pages/Overview'
 import { Workstations, Network, Servers, Security, Software, Issues, Purchases, Photos } from './pages/Sections'
@@ -13,6 +14,13 @@ import { Workstations, Network, Servers, Security, Software, Issues, Purchases, 
 function Guard({ children }: { children: ReactNode }) {
   const { email } = useAuth()
   if (!email) return <Navigate to="/login" replace />
+  return children
+}
+
+function AdminGuard({ children }: { children: ReactNode }) {
+  const { email, isAdmin } = useAuth()
+  if (!email) return <Navigate to="/login" replace />
+  if (!isAdmin) return <Navigate to="/" replace />
   return children
 }
 
@@ -31,6 +39,7 @@ export const router = createBrowserRouter(
       <Route path="/login" element={<Login />} />
       <Route path="/" element={<Guard><Dashboard /></Guard>} />
       <Route path="/settings" element={<Guard><Settings /></Guard>} />
+      <Route path="/users" element={<AdminGuard><Users /></AdminGuard>} />
       <Route path="/reports" element={<Guard><Reports /></Guard>} />
       <Route path="/reports/:id" element={<Guard><ReportPrint /></Guard>} />
       <Route path="/audits/:id" element={<Guard><AuditShell /></Guard>}>

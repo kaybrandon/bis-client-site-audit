@@ -104,6 +104,11 @@ h1, h2, h3 { letter-spacing: -0.02em; }
 .badge-open { background: #e0f2fe; color: #0369a1; }
 .badge-blocked { background: #334155; color: #fff; }
 .badge-planned, .badge-pending { background: #e2e8f0; color: #334155; }
+.badge-active { background: #dcfce7; color: #166534; }
+.badge-disabled { background: #fee2e2; color: #b91c1c; }
+.field-error { color: var(--danger); font-weight: 600; font-size: 0.82rem; margin: 0; }
+.user-email { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.users-table .card-actions { justify-content: flex-end; }
 
 .progress-row { display: flex; justify-content: space-between; font-size: 0.86rem; color: var(--muted); }
 .progress { height: 8px; background: #e5eaf1; border-radius: 99px; overflow: hidden; }

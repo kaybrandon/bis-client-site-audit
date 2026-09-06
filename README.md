@@ -113,7 +113,7 @@ Dashboard and report **audit progress** is a weighted sum (weights add to 100):
 
 ## Auth
 
-Phase 1: JWT from `POST /api/auth/login`. The SPA stores the token in `localStorage` and sends `Authorization: Bearer`.
+Phase 1: JWT from `POST /api/auth/login`. The SPA stores the token in `localStorage` and sends `Authorization: Bearer`. There is no public self-signup. Admins manage accounts on **Users** (`GET/POST /api/users`). Soft-disable uses Identity lockout so login fails until re-enable. The seed account stays in the **Admin** role; the last remaining admin cannot be disabled.
 
 Swagger UI (`/swagger`) uses the same Bearer JWT (Authorize). It is **on** in Development/Staging and **off** in Production unless you set `Swagger__Enabled=true`. When it is off, `/swagger` is 404 (not the SPA shell).
 
@@ -131,6 +131,7 @@ Uploaded through `POST /api/audits/{id}/photos` (multipart). Files land under `w
 | `/audits/:id/overview` … `/photos` | Nine-section audit workspace |
 | `/reports` and `/reports/:id` | Printable client report (browser Print / PDF) |
 | `/settings` | One editable panel per dropdown list |
+| `/users` | Admin-only local accounts (add, disable, re-enable) |
 | `/login` | Local account sign-in |
 
 ## Logging

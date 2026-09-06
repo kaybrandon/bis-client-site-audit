@@ -1,5 +1,6 @@
 using BisAudit.Api.Data;
 using BisAudit.Api.Data.Entities;
+using BisAudit.Api.Identity;
 using BisAudit.Api.Options;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -16,33 +17,69 @@ public static class DatabaseSeeder
         var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DatabaseSeeder");
         var seedOptions = scope.ServiceProvider.GetRequiredService<IOptions<SeedOptions>>().Value;
         var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var roles = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
         await db.Database.MigrateAsync();
-        await SeedAdminAsync(users, seedOptions, logger);
+        await SeedAdminAsync(users, roles, seedOptions, logger);
         await SeedDropdownsAsync(db);
         if (seedOptions.LoadSampleAudit)
             await SeedSampleAuditsAsync(db, logger);
     }
 
-    private static async Task SeedAdminAsync(UserManager<ApplicationUser> users, SeedOptions options, ILogger logger)
+    private static async Task SeedAdminAsync(
+        UserManager<ApplicationUser> users,
+        RoleManager<IdentityRole> roles,
+        SeedOptions options,
+        ILogger logger)
     {
-        var existing = await users.FindByEmailAsync(options.AdminEmail);
-        if (existing is not null) return;
-
-        var admin = new ApplicationUser
+        if (!await roles.RoleExistsAsync(AppRoles.Admin))
         {
-            UserName = options.AdminEmail,
-            Email = options.AdminEmail,
-            EmailConfirmed = true
-        };
-        var result = await users.CreateAsync(admin, options.AdminPassword);
-        if (!result.Succeeded)
-        {
-            logger.LogError("Failed to seed admin: {Errors}", string.Join("; ", result.Errors.Select(e => e.Description)));
-            throw new InvalidOperationException("Could not seed admin user.");
+            var roleResult = await roles.CreateAsync(new IdentityRole(AppRoles.Admin));
+            if (!roleResult.Succeeded)
+            {
+                logger.LogError("Failed to seed Admin role: {Errors}", string.Join("; ", roleResult.Errors.Select(e => e.Description)));
+                throw new InvalidOperationException("Could not seed Admin role.");
+            }
         }
 
-        logger.LogInformation("Seeded admin user {Email}", options.AdminEmail);
+        var existing = await users.FindByEmailAsync(options.AdminEmail);
+        if (existing is null)
+        {
+            existing = new ApplicationUser
+            {
+                UserName = options.AdminEmail,
+                Email = options.AdminEmail,
+                EmailConfirmed = true,
+                LockoutEnabled = true,
+                CreatedAt = DateTime.UtcNow
+            };
+            var result = await users.CreateAsync(existing, options.AdminPassword);
+            if (!result.Succeeded)
+            {
+                logger.LogError("Failed to seed admin: {Errors}", string.Join("; ", result.Errors.Select(e => e.Description)));
+                throw new InvalidOperationException("Could not seed admin user.");
+            }
+
+            logger.LogInformation("Seeded admin user {Email}", options.AdminEmail);
+        }
+
+        if (existing.CreatedAt == default)
+        {
+            existing.CreatedAt = DateTime.UtcNow;
+            await users.UpdateAsync(existing);
+        }
+
+        if (!await users.IsInRoleAsync(existing, AppRoles.Admin))
+        {
+            var addRole = await users.AddToRoleAsync(existing, AppRoles.Admin);
+            if (!addRole.Succeeded)
+            {
+                logger.LogError("Failed to assign Admin role: {Errors}", string.Join("; ", addRole.Errors.Select(e => e.Description)));
+                throw new InvalidOperationException("Could not assign Admin role to seed admin.");
+            }
+
+            logger.LogInformation("Assigned Admin role to {Email}", options.AdminEmail);
+        }
     }
 
     private static async Task SeedDropdownsAsync(ApplicationDbContext db)
