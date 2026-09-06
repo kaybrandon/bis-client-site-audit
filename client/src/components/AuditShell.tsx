@@ -1,8 +1,9 @@
 import { Link, NavLink, Outlet, useLocation, useParams } from 'react-router-dom'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { api } from '../api'
 import { rememberLastAudit } from '../lastAudit'
 import { SECTIONS, nextIncompleteSection, sectionCue, type AuditDetail } from '../types'
+import { TakePhotoButton } from './TakePhotoButton'
 
 export type AuditOutlet = { audit: AuditDetail | null; reload: () => Promise<void> }
 
@@ -12,6 +13,7 @@ export function AuditShell() {
   const current = loc.pathname.split('/').pop() || 'overview'
   const [audit, setAudit] = useState<AuditDetail | null>(null)
   const navRef = useRef<HTMLElement>(null)
+  const headerRef = useRef<HTMLElement>(null)
 
   const reload = useCallback(async () => {
     if (!id) return
@@ -26,6 +28,21 @@ export function AuditShell() {
     if (id) rememberLastAudit(id)
   }, [id])
 
+  useLayoutEffect(() => {
+    const el = headerRef.current
+    if (!el) return
+    const apply = () => {
+      document.documentElement.style.setProperty('--app-header-height', `${el.offsetHeight}px`)
+    }
+    apply()
+    const ro = new ResizeObserver(apply)
+    ro.observe(el)
+    return () => {
+      ro.disconnect()
+      document.documentElement.style.removeProperty('--app-header-height')
+    }
+  }, [])
+
   useEffect(() => {
     const active = navRef.current?.querySelector<HTMLElement>('.nav-item.active')
     active?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' })
@@ -35,14 +52,17 @@ export function AuditShell() {
 
   return (
     <div className="page-shell">
-      <header className="app-header">
-        <div className="app-brand">
-          <Link className="btn btn-ghost btn-icon" to="/" title="Dashboard">←</Link>
-          <span className="brand-mark">🏢</span>
-          <div>
-            <h1>{audit?.companyName ?? 'Audit'}</h1>
-            <p>{audit?.industry} · {audit?.status}</p>
+      <header ref={headerRef} className="app-header app-header-sticky">
+        <div className="header-primary">
+          <div className="app-brand">
+            <Link className="btn btn-ghost btn-icon" to="/" title="Dashboard">←</Link>
+            <span className="brand-mark">🏢</span>
+            <div>
+              <h1>{audit?.companyName ?? 'Audit'}</h1>
+              <p>{audit?.industry} · {audit?.status}</p>
+            </div>
           </div>
+          <TakePhotoButton auditId={id} onSaved={reload} />
         </div>
         <div className="header-actions">
           {id && (

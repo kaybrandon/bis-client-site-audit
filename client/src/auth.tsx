@@ -42,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ready: true,
     login: async (e, p) => {
       const result = await api.login(e, p)
+      // Session only: JWT + email + admin flag. Never persist the password.
       localStorage.setItem('bis.token', result.token)
       localStorage.setItem('bis.email', result.email)
       localStorage.setItem('bis.isAdmin', result.isAdmin ? '1' : '0')

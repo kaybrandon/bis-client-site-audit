@@ -1,18 +1,22 @@
 import type { ReactNode } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../auth'
+import { TakePhotoButton } from './TakePhotoButton'
 
 export function SettingsShell({ children }: { children: ReactNode }) {
   const { isAdmin } = useAuth()
   return (
     <div className="page-shell">
       <header className="app-header">
-        <div className="app-brand">
-          <Link className="btn btn-ghost btn-icon" to="/" aria-label="Back to dashboard">←</Link>
-          <div>
-            <h1>Settings</h1>
-            <p>{isAdmin ? 'Dropdown lists and workspace accounts' : 'Edit dropdown options used across audit modules.'}</p>
+        <div className="header-primary">
+          <div className="app-brand">
+            <Link className="btn btn-ghost btn-icon" to="/" aria-label="Back to dashboard">←</Link>
+            <div>
+              <h1>Settings</h1>
+              <p>{isAdmin ? 'Dropdown lists and workspace accounts' : 'Edit dropdown options used across audit modules.'}</p>
+            </div>
           </div>
+          <TakePhotoButton />
         </div>
       </header>
       <div className="content">

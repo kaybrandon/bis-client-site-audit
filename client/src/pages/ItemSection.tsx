@@ -140,7 +140,7 @@ export function ItemSection({
         </article>
       ))}
       {draft && (
-        <Modal title={title} busy={saving} error={error} onSave={() => void save()} onClose={() => { setDraft(null); setError(null) }}>
+        <Modal title={title} auditId={id} busy={saving} error={error} onSave={() => void save()} onClose={() => { setDraft(null); setError(null) }}>
           {renderFieldGrid(primary, draft, setDraft, options)}
           {extra.length > 0 && (
             <details className="more-fields" open={extraHasValues(extra, draft)}>

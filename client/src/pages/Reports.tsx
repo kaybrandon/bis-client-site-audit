@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
 import { Header } from '../components/Header'
+import { TakePhotoButton } from '../components/TakePhotoButton'
 import { StatusBadge } from '../components/StatusBadge'
 import type { AuditSummary } from '../types'
 
@@ -55,12 +56,15 @@ export function ReportPrint() {
   return (
     <div className="page-shell">
       <header className="app-header no-print">
-        <div className="app-brand">
-          <Link className="btn btn-ghost btn-icon" to="/reports">←</Link>
-          <div>
-            <h1>Client Report</h1>
-            <p>{audit.companyName}</p>
+        <div className="header-primary">
+          <div className="app-brand">
+            <Link className="btn btn-ghost btn-icon" to="/reports">←</Link>
+            <div>
+              <h1>Client Report</h1>
+              <p>{audit.companyName}</p>
+            </div>
           </div>
+          <TakePhotoButton />
         </div>
         <div className="header-actions">
           <button type="button" className="btn btn-light" onClick={() => window.print()}>Print / PDF</button>
