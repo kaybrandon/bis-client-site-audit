@@ -135,10 +135,27 @@ function SwaggerAdminPanel() {
       return
     }
     try {
-      await navigator.clipboard.writeText(value)
+      if (navigator.clipboard?.writeText)
+        await navigator.clipboard.writeText(value)
+      else
+        throw new Error('clipboard unavailable')
       setCopyMessage('Copied. Paste it into Swagger Authorize (token only).')
     } catch {
-      setCopyMessage('Could not copy. Check browser clipboard permission.')
+      try {
+        const field = document.createElement('textarea')
+        field.value = value
+        field.setAttribute('readonly', '')
+        field.style.position = 'fixed'
+        field.style.left = '-9999px'
+        document.body.appendChild(field)
+        field.select()
+        const ok = document.execCommand('copy')
+        document.body.removeChild(field)
+        if (!ok) throw new Error('copy command failed')
+        setCopyMessage('Copied. Paste it into Swagger Authorize (token only).')
+      } catch {
+        setCopyMessage('Could not copy. Check browser clipboard permission.')
+      }
     }
   }
 
