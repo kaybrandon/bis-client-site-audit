@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ForbiddenError, api, sessionToken } from '../api'
+import { API, ForbiddenError, api, sessionToken } from '../api'
 import { useAuth } from '../auth'
 import type { DropdownList } from '../types'
 
 type Draft = DropdownList & { newValue: string; message?: string }
+
+function swaggerHref() {
+  const origin = API.replace(/\/$/, '')
+  return `${origin}/swagger`
+}
 
 export function Settings() {
   const { isAdmin } = useAuth()
@@ -40,21 +45,16 @@ export function Settings() {
         <div className="app-brand">
           <Link className="btn btn-ghost btn-icon" to="/">←</Link>
           <div>
-            <h1>Settings</h1>
-            <p>Dropdown lists{isAdmin ? ' and API documentation' : ''}.</p>
+            <h1>Dropdown Settings</h1>
+            <p>Edit the options available in dropdown menus across all audit modules.</p>
           </div>
         </div>
       </header>
       <div className="content">
         {isAdmin && <SwaggerAdminPanel />}
-        <div className="section-head">
-          <div>
-            <h2>Dropdown lists</h2>
-            <p className="muted">
-              Changes apply immediately to new and existing records. One panel per list — add, remove, then save.
-            </p>
-          </div>
-        </div>
+        <p className="muted" style={{ marginBottom: 18 }}>
+          Changes apply immediately to new and existing records. One panel per list — add, remove, then save.
+        </p>
         {lists.map((list) => (
           <section className="panel" style={{ padding: '18px 20px', marginBottom: 16 }} key={list.id}>
             <div className="toolbar">
@@ -93,6 +93,12 @@ function SwaggerAdminPanel() {
   const [saveError, setSaveError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [copyMessage, setCopyMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!copyMessage || copyMessage !== 'Copied.') return
+    const id = window.setTimeout(() => setCopyMessage(null), 2000)
+    return () => window.clearTimeout(id)
+  }, [copyMessage])
 
   useEffect(() => {
     let cancelled = false
@@ -139,7 +145,7 @@ function SwaggerAdminPanel() {
         await navigator.clipboard.writeText(value)
       else
         throw new Error('clipboard unavailable')
-      setCopyMessage('Copied. Paste it into Swagger Authorize (token only).')
+      setCopyMessage('Copied.')
     } catch {
       try {
         const field = document.createElement('textarea')
@@ -152,7 +158,7 @@ function SwaggerAdminPanel() {
         const ok = document.execCommand('copy')
         document.body.removeChild(field)
         if (!ok) throw new Error('copy command failed')
-        setCopyMessage('Copied. Paste it into Swagger Authorize (token only).')
+        setCopyMessage('Copied.')
       } catch {
         setCopyMessage('Could not copy. Check browser clipboard permission.')
       }
@@ -188,7 +194,7 @@ function SwaggerAdminPanel() {
           Copy Bearer token
         </button>
         {enabled && (
-          <a className="btn btn-primary" href="/swagger" target="_blank" rel="noreferrer">
+          <a className="btn btn-primary" href={swaggerHref()} target="_blank" rel="noreferrer">
             Open Swagger UI
           </a>
         )}
