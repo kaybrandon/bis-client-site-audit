@@ -55,6 +55,10 @@ function token() {
   return localStorage.getItem('bis.token')
 }
 
+export function sessionToken() {
+  return token()
+}
+
 async function request<T>(path: string, init: RequestInit = {}, attempt = 0): Promise<T> {
   const headers = new Headers(init.headers)
   if (!headers.has('Authorization') && token())
@@ -182,6 +186,12 @@ export const api = {
     request<void>(`/api/settings/dropdowns/${id}`, {
       method: 'PUT',
       body: JSON.stringify({ options }),
+    }),
+  swaggerSetting: () => request<{ enabled: boolean }>('/api/settings/swagger'),
+  saveSwaggerSetting: (enabled: boolean) =>
+    request<{ enabled: boolean }>('/api/settings/swagger', {
+      method: 'PUT',
+      body: JSON.stringify({ enabled }),
     }),
   downloadContacts: async (id: string, companyName: string) => {
     const res = await fetch(api.contactsCsvUrl(id), {

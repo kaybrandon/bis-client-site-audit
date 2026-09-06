@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -48,10 +49,12 @@ internal sealed class AuthTestHost : IAsyncDisposable
         Client = client;
     }
 
-    public static async Task<AuthTestHost> StartAsync()
+    public static Task<AuthTestHost> StartAsync() => StartAsync(null, null);
+
+    public static async Task<AuthTestHost> StartAsync(InMemoryDatabaseRoot? databaseRoot, string? databaseName)
     {
         var root = Directory.CreateTempSubdirectory("bis-auth-").FullName;
-        var dbName = "BisAuditAuth-" + Guid.NewGuid().ToString("N");
+        var dbName = databaseName ?? "BisAuditAuth-" + Guid.NewGuid().ToString("N");
 
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
         {
@@ -71,7 +74,13 @@ internal sealed class AuthTestHost : IAsyncDisposable
         });
 
         builder.Services.Configure<UploadOptions>(builder.Configuration.GetSection(UploadOptions.SectionName));
-        builder.Services.AddDbContextFactory<ApplicationDbContext>(o => o.UseInMemoryDatabase(dbName));
+        builder.Services.AddDbContextFactory<ApplicationDbContext>(o =>
+        {
+            if (databaseRoot is null)
+                o.UseInMemoryDatabase(dbName);
+            else
+                o.UseInMemoryDatabase(dbName, databaseRoot);
+        });
         builder.Services.AddScoped(sp =>
             sp.GetRequiredService<IDbContextFactory<ApplicationDbContext>>().CreateDbContext());
         builder.Services.AddIdentityCore<ApplicationUser>(options =>
@@ -125,6 +134,8 @@ internal sealed class AuthTestHost : IAsyncDisposable
         builder.Services.AddScoped<UserService>();
         builder.Services.AddScoped<AuditService>();
         builder.Services.AddScoped<PhotoService>();
+        builder.Services.AddScoped<DropdownService>();
+        builder.Services.AddSingleton<ISwaggerEnablement, SwaggerEnablement>();
         builder.Services.AddControllers()
             .AddJsonOptions(o =>
             {
@@ -134,7 +145,7 @@ internal sealed class AuthTestHost : IAsyncDisposable
         builder.Services.AddBisAuditSwagger();
 
         var app = builder.Build();
-        app.UseBisAuditSwagger(enabled: true);
+        app.UseBisAuditSwagger();
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
@@ -147,18 +158,21 @@ internal sealed class AuthTestHost : IAsyncDisposable
             var roles = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             if (!await roles.RoleExistsAsync(AppRoles.Admin))
                 await roles.CreateAsync(new IdentityRole(AppRoles.Admin));
-            var user = new ApplicationUser
+            if (await users.FindByEmailAsync(Email) is null)
             {
-                UserName = Email,
-                Email = Email,
-                EmailConfirmed = true,
-                LockoutEnabled = true,
-                CreatedAt = DateTime.UtcNow
-            };
-            var result = await users.CreateAsync(user, Password);
-            if (!result.Succeeded)
-                throw new InvalidOperationException(string.Join("; ", result.Errors.Select(e => e.Description)));
-            await users.AddToRoleAsync(user, AppRoles.Admin);
+                var user = new ApplicationUser
+                {
+                    UserName = Email,
+                    Email = Email,
+                    EmailConfirmed = true,
+                    LockoutEnabled = true,
+                    CreatedAt = DateTime.UtcNow
+                };
+                var result = await users.CreateAsync(user, Password);
+                if (!result.Succeeded)
+                    throw new InvalidOperationException(string.Join("; ", result.Errors.Select(e => e.Description)));
+                await users.AddToRoleAsync(user, AppRoles.Admin);
+            }
         }
 
         await app.StartAsync();

@@ -9,8 +9,9 @@ public static class SwaggerExtensions
     public const string BearerSchemeId = "Bearer";
 
     /// <summary>
-    /// Development/Staging default on. Production defaults off unless
-    /// <c>Swagger:Enabled</c> / <c>Swagger__Enabled</c> is set explicitly.
+    /// Default when the database has no Swagger row. Development/Staging on.
+    /// Production off unless <c>Swagger:Enabled</c> / <c>Swagger__Enabled</c>
+    /// is set explicitly. Runtime enablement is the admin DB setting.
     /// </summary>
     public static bool IsEnabled(IConfiguration configuration, IHostEnvironment environment)
     {
@@ -67,30 +68,34 @@ public static class SwaggerExtensions
     /// <summary>
     /// Serves Swagger UI at /swagger when enabled. When disabled, /swagger and
     /// /swagger/* return 404 so the SPA fallback cannot claim those paths.
+    /// Pass <paramref name="enabled"/> for a fixed pipeline (tests). Omit it to
+    /// read <see cref="Services.ISwaggerEnablement"/> on each Swagger request.
     /// </summary>
-    public static IApplicationBuilder UseBisAuditSwagger(this IApplicationBuilder app, bool enabled)
+    public static IApplicationBuilder UseBisAuditSwagger(this IApplicationBuilder app, bool? enabled = null)
     {
-        if (enabled)
-        {
-            app.UseSwagger();
-            app.UseSwaggerUI(options =>
-            {
-                options.SwaggerEndpoint($"/{RoutePrefix}/{DocumentName}/swagger.json", "BIS Client IT Audit API v1");
-                options.RoutePrefix = RoutePrefix;
-                options.EnablePersistAuthorization();
-            });
-            return app;
-        }
-
         app.Use(async (context, next) =>
         {
             if (context.Request.Path.StartsWithSegments("/" + RoutePrefix))
             {
-                context.Response.StatusCode = StatusCodes.Status404NotFound;
-                return;
+                var on = enabled ?? await context.RequestServices
+                    .GetRequiredService<Services.ISwaggerEnablement>()
+                    .IsEnabledAsync(context.RequestAborted);
+                if (!on)
+                {
+                    context.Response.StatusCode = StatusCodes.Status404NotFound;
+                    return;
+                }
             }
 
             await next();
+        });
+
+        app.UseSwagger();
+        app.UseSwaggerUI(options =>
+        {
+            options.SwaggerEndpoint($"/{RoutePrefix}/{DocumentName}/swagger.json", "BIS Client IT Audit API v1");
+            options.RoutePrefix = RoutePrefix;
+            options.EnablePersistAuthorization();
         });
         return app;
     }

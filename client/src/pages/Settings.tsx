@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api } from '../api'
+import { ForbiddenError, api, sessionToken } from '../api'
+import { useAuth } from '../auth'
 import type { DropdownList } from '../types'
 
 type Draft = DropdownList & { newValue: string; message?: string }
 
 export function Settings() {
+  const { isAdmin } = useAuth()
   const [lists, setLists] = useState<Draft[]>([])
 
   useEffect(() => {
@@ -38,15 +40,21 @@ export function Settings() {
         <div className="app-brand">
           <Link className="btn btn-ghost btn-icon" to="/">←</Link>
           <div>
-            <h1>Dropdown Settings</h1>
-            <p>Edit the options available in dropdown menus across all audit modules.</p>
+            <h1>Settings</h1>
+            <p>Dropdown lists{isAdmin ? ' and API documentation' : ''}.</p>
           </div>
         </div>
       </header>
       <div className="content">
-        <p className="muted" style={{ marginBottom: 18 }}>
-          Changes apply immediately to new and existing records. One panel per list — add, remove, then save.
-        </p>
+        {isAdmin && <SwaggerAdminPanel />}
+        <div className="section-head">
+          <div>
+            <h2>Dropdown lists</h2>
+            <p className="muted">
+              Changes apply immediately to new and existing records. One panel per list — add, remove, then save.
+            </p>
+          </div>
+        </div>
         {lists.map((list) => (
           <section className="panel" style={{ padding: '18px 20px', marginBottom: 16 }} key={list.id}>
             <div className="toolbar">
@@ -75,5 +83,98 @@ export function Settings() {
         ))}
       </div>
     </div>
+  )
+}
+
+function SwaggerAdminPanel() {
+  const [enabled, setEnabled] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [copyMessage, setCopyMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    void api.swaggerSetting().then((row) => {
+      setEnabled(row.enabled)
+      setLoadError(null)
+    }).catch((e) => {
+      if (e instanceof ForbiddenError) return
+      setLoadError(e instanceof Error ? e.message : 'Could not load Swagger setting.')
+    })
+  }, [])
+
+  const toggle = async () => {
+    setBusy(true)
+    setSaveError(null)
+    const next = !enabled
+    try {
+      const row = await api.saveSwaggerSetting(next)
+      setEnabled(row.enabled)
+    } catch (e) {
+      if (e instanceof ForbiddenError) {
+        setSaveError('Admins only.')
+        return
+      }
+      setSaveError(e instanceof Error ? e.message : 'Could not update Swagger.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const copyToken = async () => {
+    const value = sessionToken()
+    if (!value) {
+      setCopyMessage('Sign in again, then copy the token.')
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(value)
+      setCopyMessage('Copied. Paste it into Swagger Authorize (token only).')
+    } catch {
+      setCopyMessage('Could not copy. Check browser clipboard permission.')
+    }
+  }
+
+  return (
+    <section className="panel swagger-panel" style={{ padding: '18px 20px', marginBottom: 20 }}>
+      <div className="toolbar">
+        <div>
+          <h3 style={{ margin: 0 }}>API documentation (Swagger)</h3>
+          <p className="muted">Admins only. Stored in the database — no App Setting change needed.</p>
+        </div>
+      </div>
+      {loadError && <p className="error">{loadError}</p>}
+      <div className="swagger-controls">
+        <button
+          type="button"
+          className={`setting-toggle${enabled ? ' is-on' : ''}`}
+          role="switch"
+          aria-checked={enabled}
+          aria-label="Enable Swagger UI"
+          disabled={busy}
+          onClick={() => void toggle()}
+        >
+          <span className="setting-toggle-track" aria-hidden="true">
+            <span className="setting-toggle-thumb" />
+          </span>
+          <span>Enable Swagger UI</span>
+          <span className="badge">{enabled ? 'On' : 'Off'}</span>
+        </button>
+        <button type="button" className="btn btn-ghost-dark" onClick={() => void copyToken()}>
+          Copy Bearer token
+        </button>
+        {enabled && (
+          <a className="btn btn-primary" href="/swagger" target="_blank" rel="noreferrer">
+            Open Swagger UI
+          </a>
+        )}
+      </div>
+      <p className="muted" style={{ marginTop: 12 }}>
+        When on, <code>/swagger</code> serves the UI. Authorize with the copied session JWT — this does not open anonymous API access.
+        When off, <code>/swagger</code> returns 404.
+      </p>
+      {saveError && <p className="error" style={{ marginTop: 10 }}>{saveError}</p>}
+      {copyMessage && <p className="muted" style={{ marginTop: 10 }}>{copyMessage}</p>}
+    </section>
   )
 }

@@ -1,0 +1,12 @@
+namespace BisAudit.Api.Data.Entities;
+
+/// <summary>
+/// Key/value row for runtime app flags. Swagger UI enablement is stored here
+/// so it can change without an Azure App Setting or redeploy.
+/// </summary>
+public class AppSetting
+{
+    public string Key { get; set; } = "";
+    public string Value { get; set; } = "";
+    public DateTime UpdatedAt { get; set; }
+}
