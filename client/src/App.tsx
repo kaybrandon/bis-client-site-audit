@@ -39,7 +39,8 @@ export const router = createBrowserRouter(
       <Route path="/login" element={<Login />} />
       <Route path="/" element={<Guard><Dashboard /></Guard>} />
       <Route path="/settings" element={<Guard><Settings /></Guard>} />
-      <Route path="/users" element={<AdminGuard><Users /></AdminGuard>} />
+      <Route path="/settings/users" element={<AdminGuard><Users /></AdminGuard>} />
+      <Route path="/users" element={<Navigate to="/settings/users" replace />} />
       <Route path="/reports" element={<Guard><Reports /></Guard>} />
       <Route path="/reports/:id" element={<Guard><ReportPrint /></Guard>} />
       <Route path="/audits/:id" element={<Guard><AuditShell /></Guard>}>

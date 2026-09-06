@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ApiError, ForbiddenError, api } from '../api'
 import { ConfirmSheet } from '../components/ConfirmSheet'
-import { Header } from '../components/Header'
 import { Field, Modal } from '../components/Modal'
+import { SettingsShell } from '../components/SettingsShell'
 import type { AppUser } from '../types'
 
 type FieldKey = 'email' | 'password' | 'confirmPassword'
@@ -123,76 +123,73 @@ export function Users() {
   }
 
   return (
-    <div className="page-shell">
-      <Header />
-      <div className="content">
-        <div className="section-head">
-          <div>
-            <h2>Users</h2>
-            <p className="muted">Local accounts for the audit workspace. Admins only — no public sign-up.</p>
-          </div>
-          <button type="button" className="btn btn-primary" onClick={openAdd}>Add user</button>
+    <SettingsShell>
+      <div className="section-head">
+        <div>
+          <h2>Users</h2>
+          <p className="muted">Local accounts for the audit workspace. Admins only — no public sign-up.</p>
         </div>
-        {loadError && <p className="error">{loadError}</p>}
-        {actionError && <p className="error">{actionError}</p>}
-        {users.length === 0 && !loadError && <div className="empty">No users found.</div>}
-        {users.length > 0 && (
-          <div className="table-scroll panel" style={{ padding: '8px 16px 12px' }}>
-            <table className="data users-table">
-              <thead>
-                <tr>
-                  <th>Email</th>
-                  <th>Status</th>
-                  <th>Created</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user) => {
-                  const lastAdmin = user.isAdmin && user.active && enabledAdmins <= 1
-                  return (
-                    <tr key={user.id}>
-                      <td>
-                        <div className="user-email">
-                          <span>{user.email}</span>
-                          {user.isAdmin && <span className="badge">Admin</span>}
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`badge ${user.active ? 'badge-active' : 'badge-disabled'}`}>
-                          {user.active ? 'Active' : 'Disabled'}
-                        </span>
-                      </td>
-                      <td>{formatCreated(user.createdAt)}</td>
-                      <td>
-                        <div className="card-actions">
-                          {user.active
-                            ? (
-                                <button
-                                  type="button"
-                                  className="btn btn-danger"
-                                  disabled={lastAdmin}
-                                  title={lastAdmin ? 'Cannot disable the last remaining admin.' : 'Disable this user'}
-                                  onClick={() => setPendingDisable(user)}
-                                >
-                                  Disable
-                                </button>
-                              )
-                            : (
-                                <button type="button" className="btn btn-ghost-dark" onClick={() => void enable(user)}>
-                                  Re-enable
-                                </button>
-                              )}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <button type="button" className="btn btn-primary" onClick={openAdd}>Add user</button>
       </div>
+      {loadError && <p className="error">{loadError}</p>}
+      {actionError && <p className="error">{actionError}</p>}
+      {users.length === 0 && !loadError && <div className="empty">No users found.</div>}
+      {users.length > 0 && (
+        <div className="table-scroll panel" style={{ padding: '8px 16px 12px' }}>
+          <table className="data users-table">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((user) => {
+                const lastAdmin = user.isAdmin && user.active && enabledAdmins <= 1
+                return (
+                  <tr key={user.id}>
+                    <td>
+                      <div className="user-email">
+                        <span>{user.email}</span>
+                        {user.isAdmin && <span className="badge">Admin</span>}
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`badge ${user.active ? 'badge-active' : 'badge-disabled'}`}>
+                        {user.active ? 'Active' : 'Disabled'}
+                      </span>
+                    </td>
+                    <td>{formatCreated(user.createdAt)}</td>
+                    <td>
+                      <div className="card-actions">
+                        {user.active
+                          ? (
+                              <button
+                                type="button"
+                                className="btn btn-danger"
+                                disabled={lastAdmin}
+                                title={lastAdmin ? 'Cannot disable the last remaining admin.' : 'Disable this user'}
+                                onClick={() => setPendingDisable(user)}
+                              >
+                                Disable
+                              </button>
+                            )
+                          : (
+                              <button type="button" className="btn btn-ghost-dark" onClick={() => void enable(user)}>
+                                Re-enable
+                              </button>
+                            )}
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
       {showAdd && (
         <Modal
           title="Add user"
@@ -245,6 +242,6 @@ export function Users() {
           onCancel={() => setPendingDisable(null)}
         />
       )}
-    </div>
+    </SettingsShell>
   )
 }
