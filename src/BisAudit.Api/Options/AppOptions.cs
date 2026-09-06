@@ -15,8 +15,11 @@ public class SeedOptions
 }
 
 /// <summary>
-/// OpenAPI / Swagger UI. When <see cref="Enabled"/> is null, Development and Staging
-/// are on and Production is off. Override with <c>Swagger__Enabled</c>.
+/// Initial OpenAPI / Swagger UI default when no <c>AppSettings</c> row exists.
+/// Runtime on/off is the admin Settings toggle (database). When
+/// <see cref="Enabled"/> is null, Development and Staging are on and Production
+/// is off. <c>Swagger__Enabled</c> only seeds that first row — it is not written
+/// back from the app.
 /// </summary>
 public class SwaggerOptions
 {

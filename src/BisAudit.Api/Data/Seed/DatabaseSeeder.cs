@@ -2,6 +2,8 @@ using BisAudit.Api.Data;
 using BisAudit.Api.Data.Entities;
 using BisAudit.Api.Identity;
 using BisAudit.Api.Options;
+using BisAudit.Api.Services;
+using BisAudit.Api.Swagger;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -22,8 +24,31 @@ public static class DatabaseSeeder
         await db.Database.MigrateAsync();
         await SeedAdminAsync(users, roles, seedOptions, logger);
         await SeedDropdownsAsync(db);
+        await SeedSwaggerSettingAsync(scope.ServiceProvider, db, logger);
         if (seedOptions.LoadSampleAudit)
             await SeedSampleAuditsAsync(db, logger);
+    }
+
+    private static async Task SeedSwaggerSettingAsync(IServiceProvider services, ApplicationDbContext db, ILogger logger)
+    {
+        if (await db.AppSettings.AnyAsync(s => s.Key == SwaggerEnablement.SettingKey))
+            return;
+
+        var configuration = services.GetRequiredService<IConfiguration>();
+        var environment = services.GetRequiredService<IHostEnvironment>();
+        var enabled = SwaggerExtensions.IsEnabled(configuration, environment);
+        db.AppSettings.Add(new AppSetting
+        {
+            Key = SwaggerEnablement.SettingKey,
+            Value = enabled ? bool.TrueString : bool.FalseString,
+            UpdatedAt = DateTime.UtcNow
+        });
+        await db.SaveChangesAsync();
+        logger.LogInformation(
+            "Seeded {SettingKey}={Enabled} from environment default ({Environment})",
+            SwaggerEnablement.SettingKey,
+            enabled,
+            environment.EnvironmentName);
     }
 
     private static async Task SeedAdminAsync(

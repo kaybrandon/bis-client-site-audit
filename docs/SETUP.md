@@ -59,7 +59,7 @@ dotnet run --project src/BisAudit.Api --launch-profile http
 First start also runs `Database.Migrate()` and seed if the DB is empty.
 
 - API: http://localhost:5088
-- Swagger: http://localhost:5088/swagger — Authorize with the JWT from `POST /api/auth/login` (paste the token only)
+- Swagger: http://localhost:5088/swagger when an admin has **Enable Swagger UI** on (Settings). Authorize with the copied session JWT (paste the token only).
 - App log file: `src/BisAudit.Api/logs/bisaudit-YYYYMMDD.log`
 
 ### Run the React app
@@ -110,7 +110,7 @@ All live under `src/BisAudit.Api/appsettings.json` (override with `appsettings.D
 | `Seed:AdminEmail` / `Seed:AdminPassword` | First admin created when the user table is empty. |
 | `Seed:LoadSampleAudit` | `true` = demo audits on empty DB. Set `false` on a live server. |
 | `Logging:DetailedErrors` | `true` = yellow developer exception page. **Staging only. Never Production.** |
-| `Swagger:Enabled` | OpenAPI UI at `/swagger`. Default **on** in Development/Staging, **off** in Production. Production override: `Swagger__Enabled=true`. When off, `/swagger` is 404 (not the SPA). |
+| `Swagger:Enabled` | **First-run default only** for the database Swagger row. After that, admins use **Settings → Enable Swagger UI**. Default **on** in Development/Staging, **off** in Production. The app does not write `Swagger__Enabled`. When off, `/swagger` is 404 (not the SPA). |
 | `Logging:File:Path` | Folder for rolling app logs (default `logs` under the API folder). |
 | `Logging:File:RetainedFileCountLimit` | How many daily log files to keep (default 30). |
 | `Serilog:MinimumLevel` | How chatty the log is. See [LOGGING.md](LOGGING.md). |

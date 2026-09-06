@@ -101,6 +101,7 @@ builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<AuditService>();
 builder.Services.AddScoped<PhotoService>();
 builder.Services.AddScoped<DropdownService>();
+builder.Services.AddSingleton<ISwaggerEnablement, SwaggerEnablement>();
 
 var corsOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>()
     ?? ["http://localhost:5173", "http://127.0.0.1:5173"];
@@ -126,9 +127,9 @@ var app = builder.Build();
 
 await DatabaseSeeder.SeedAsync(app.Services);
 
-var swaggerEnabled = SwaggerExtensions.IsEnabled(app.Configuration, app.Environment);
+var swaggerEnabled = await app.Services.GetRequiredService<ISwaggerEnablement>().IsEnabledAsync();
 app.Logger.LogInformation(
-    "Swagger UI is {SwaggerState} ({Environment})",
+    "Swagger UI is {SwaggerState} (database setting, {Environment})",
     swaggerEnabled ? "enabled" : "disabled",
     app.Environment.EnvironmentName);
 
@@ -151,7 +152,7 @@ else
     });
 }
 
-app.UseBisAuditSwagger(swaggerEnabled);
+app.UseBisAuditSwagger();
 
 if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();

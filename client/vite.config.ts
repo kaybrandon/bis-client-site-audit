@@ -8,6 +8,7 @@ export default defineConfig({
     proxy: {
       '/api': { target: 'http://localhost:5088', changeOrigin: true },
       '/uploads': { target: 'http://localhost:5088', changeOrigin: true },
+      '/swagger': { target: 'http://localhost:5088', changeOrigin: true },
     },
   },
   preview: {
@@ -15,6 +16,7 @@ export default defineConfig({
     proxy: {
       '/api': { target: 'http://localhost:5088', changeOrigin: true },
       '/uploads': { target: 'http://localhost:5088', changeOrigin: true },
+      '/swagger': { target: 'http://localhost:5088', changeOrigin: true },
     },
   },
 })

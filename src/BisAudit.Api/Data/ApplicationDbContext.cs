@@ -20,6 +20,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<SitePhoto> Photos => Set<SitePhoto>();
     public DbSet<DropdownList> DropdownLists => Set<DropdownList>();
     public DbSet<DropdownOption> DropdownOptions => Set<DropdownOption>();
+    public DbSet<AppSetting> AppSettings => Set<AppSetting>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -140,6 +141,14 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         {
             e.ToTable("DropdownOptions");
             e.Property(x => x.Value).HasMaxLength(120).IsRequired();
+        });
+
+        builder.Entity<AppSetting>(e =>
+        {
+            e.ToTable("AppSettings");
+            e.HasKey(x => x.Key);
+            e.Property(x => x.Key).HasMaxLength(80).IsRequired();
+            e.Property(x => x.Value).HasMaxLength(400).IsRequired();
         });
     }
 }

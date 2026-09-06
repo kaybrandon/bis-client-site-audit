@@ -127,7 +127,7 @@ Set via `appsettings.Production.json`, IIS Configuration Editor, or environment 
 | `Jwt__Key` | long random secret (≥ 32 chars) |
 | `Seed__LoadSampleAudit` | `false` |
 | `Logging__DetailedErrors` | `false` |
-| `Swagger__Enabled` | omit or `false` (UI is off in Production). Set `true` only if you intentionally need `/swagger` on that host |
+| `Swagger__Enabled` | omit (Production seeds Swagger **off**). Admins enable `/swagger` in Settings; do not flip this App Setting from the app |
 | `Cors__Origins__0` | `https://audit.yourfirm.local` (layout B only) |
 | `Uploads__RootPath` | `wwwroot/uploads` or `D:\BisAudit\uploads` |
 | `ASPNETCORE_ENVIRONMENT` | `Production` (already in `web.config`) |

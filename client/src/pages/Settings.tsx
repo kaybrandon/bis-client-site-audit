@@ -1,11 +1,18 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api } from '../api'
+import { API, ForbiddenError, api, sessionToken } from '../api'
+import { useAuth } from '../auth'
 import type { DropdownList } from '../types'
 
 type Draft = DropdownList & { newValue: string; message?: string }
 
+function swaggerHref() {
+  const origin = API.replace(/\/$/, '')
+  return `${origin}/swagger`
+}
+
 export function Settings() {
+  const { isAdmin } = useAuth()
   const [lists, setLists] = useState<Draft[]>([])
 
   useEffect(() => {
@@ -44,6 +51,7 @@ export function Settings() {
         </div>
       </header>
       <div className="content">
+        {isAdmin && <SwaggerAdminPanel />}
         <p className="muted" style={{ marginBottom: 18 }}>
           Changes apply immediately to new and existing records. One panel per list — add, remove, then save.
         </p>
@@ -75,5 +83,128 @@ export function Settings() {
         ))}
       </div>
     </div>
+  )
+}
+
+function SwaggerAdminPanel() {
+  const [enabled, setEnabled] = useState(false)
+  const [ready, setReady] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [copyMessage, setCopyMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!copyMessage || copyMessage !== 'Copied.') return
+    const id = window.setTimeout(() => setCopyMessage(null), 2000)
+    return () => window.clearTimeout(id)
+  }, [copyMessage])
+
+  useEffect(() => {
+    let cancelled = false
+    void api.swaggerSetting().then((row) => {
+      if (cancelled) return
+      setEnabled(row.enabled)
+      setLoadError(null)
+      setReady(true)
+    }).catch((e) => {
+      if (cancelled) return
+      if (e instanceof ForbiddenError) return
+      setLoadError(e instanceof Error ? e.message : 'Could not load Swagger setting.')
+      setReady(true)
+    })
+    return () => { cancelled = true }
+  }, [])
+
+  const toggle = async () => {
+    setBusy(true)
+    setSaveError(null)
+    const next = !enabled
+    try {
+      const row = await api.saveSwaggerSetting(next)
+      setEnabled(row.enabled)
+    } catch (e) {
+      if (e instanceof ForbiddenError) {
+        setSaveError('Admins only.')
+        return
+      }
+      setSaveError(e instanceof Error ? e.message : 'Could not update Swagger.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const copyToken = async () => {
+    const value = sessionToken()
+    if (!value) {
+      setCopyMessage('Sign in again, then copy the token.')
+      return
+    }
+    try {
+      if (navigator.clipboard?.writeText)
+        await navigator.clipboard.writeText(value)
+      else
+        throw new Error('clipboard unavailable')
+      setCopyMessage('Copied.')
+    } catch {
+      try {
+        const field = document.createElement('textarea')
+        field.value = value
+        field.setAttribute('readonly', '')
+        field.style.position = 'fixed'
+        field.style.left = '-9999px'
+        document.body.appendChild(field)
+        field.select()
+        const ok = document.execCommand('copy')
+        document.body.removeChild(field)
+        if (!ok) throw new Error('copy command failed')
+        setCopyMessage('Copied.')
+      } catch {
+        setCopyMessage('Could not copy. Check browser clipboard permission.')
+      }
+    }
+  }
+
+  return (
+    <section className="panel swagger-panel" style={{ padding: '18px 20px', marginBottom: 20 }}>
+      <div className="toolbar">
+        <div>
+          <h3 style={{ margin: 0 }}>API documentation (Swagger)</h3>
+          <p className="muted">Admins only. Stored in the database — no App Setting change needed.</p>
+        </div>
+      </div>
+      {loadError && <p className="error">{loadError}</p>}
+      <div className="swagger-controls">
+        <button
+          type="button"
+          className={`setting-toggle${enabled ? ' is-on' : ''}`}
+          role="switch"
+          aria-checked={enabled}
+          aria-label="Enable Swagger UI"
+          disabled={busy || !ready}
+          onClick={() => void toggle()}
+        >
+          <span className="setting-toggle-track" aria-hidden="true">
+            <span className="setting-toggle-thumb" />
+          </span>
+          <span>Enable Swagger UI</span>
+          <span className="badge">{enabled ? 'On' : 'Off'}</span>
+        </button>
+        <button type="button" className="btn btn-ghost-dark" onClick={() => void copyToken()}>
+          Copy Bearer token
+        </button>
+        {enabled && (
+          <a className="btn btn-primary" href={swaggerHref()} target="_blank" rel="noreferrer">
+            Open Swagger UI
+          </a>
+        )}
+      </div>
+      <p className="muted" style={{ marginTop: 12 }}>
+        When on, <code>/swagger</code> serves the UI. Authorize with the copied session JWT — this does not open anonymous API access.
+        When off, <code>/swagger</code> returns 404.
+      </p>
+      {saveError && <p className="error" style={{ marginTop: 10 }}>{saveError}</p>}
+      {copyMessage && <p className="muted" style={{ marginTop: 10 }}>{copyMessage}</p>}
+    </section>
   )
 }
